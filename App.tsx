@@ -6,24 +6,43 @@ import { GlobalSettings } from './components/GlobalSettings';
 import { BlockList } from './components/BlockList';
 import { DataPanel } from './components/DataPanel';
 import { Canvas } from './components/Canvas';
-import { RightSidebar } from './components/PropertyInspector';
+import { X } from 'lucide-react';
+
+import { PropertyInspector, RightSidebar } from './components/PropertyInspector';
+
 
 export default function App() {
-  const { theme, canvasKey, isGlobalOpen, isBlockListOpen, isDataPanelOpen } = useStore();
+  const {
+    canvasKey,
+    isGlobalOpen,
+    isBlockListOpen,
+    isDataPanelOpen,
+    selectedBlockId,
+    initNavbarBlock,
+    initHeroBlock,
+    globalSettings,
+    isPreviewMode,
+    togglePreviewMode,
+    uiTheme
+  } = useStore();
 
-  const isDark = theme === 'dark';
-  const textColor = isDark ? 'text-white' : 'text-black';
-  const appBg = isDark ? 'bg-[#0A0A0A]' : 'bg-white';
-  
-  /** 
-   * Canvas logic: 
-   * Light Mode: #E2E4E9 (Light Graphite)
-   * Dark Mode: #1D1B16 (Deep Dark Graphite)
-   */
-  const canvasBg = isDark ? 'bg-[#1D1B16]' : 'bg-[#E2E4E9]';
+  React.useEffect(() => {
+    initNavbarBlock();
+    initHeroBlock();
+    // Force Site Theme Logic (Already handled in store middleware)
+  }, [initNavbarBlock, initHeroBlock]);
+
+  // Editor Interface
+  const appBg = ''; // Deprecated, using dynamic styles
 
   return (
-    <div className={`${appBg} ${textColor} h-screen w-full flex transition-colors duration-500 overflow-hidden font-sans selection:bg-gray-500/30`}>
+    <div
+      className="h-screen w-full flex transition-colors duration-500 overflow-hidden selection:bg-blue-500/20"
+      style={{
+        backgroundColor: uiTheme.lightPanel,
+        color: uiTheme.fonts
+      }}
+    >
       <style>{`
         @keyframes canvasFlash {
           0% { opacity: 0.5; }
@@ -34,36 +53,38 @@ export default function App() {
         }
       `}</style>
 
-      {/* LEFT SIDEBAR: Navigation & Master Toggle (60px) */}
-      <Sidebar />
+      {/* PREVIEW MODE OVERLAY */}
+      {isPreviewMode && (
+        <button
+          onClick={togglePreviewMode}
+          className="fixed top-6 right-6 z-[100] p-3 rounded-full transition-all duration-300 backdrop-blur-sm shadow-lg hover:scale-110"
+          style={{ backgroundColor: uiTheme.accents, color: '#FFFFFF' }}
+        >
+          <X size={24} />
+        </button>
+      )}
+
+      {/* LEFT SIDEBAR: Navigation (Hidden in Preview) */}
+      {!isPreviewMode && <Sidebar />}
 
       {/* LEFT EXPANDABLE PANELS */}
-      {isGlobalOpen && <GlobalSettings />}
-      {isBlockListOpen && <BlockList />}
+      {!isPreviewMode && isGlobalOpen && <GlobalSettings />}
+      {!isPreviewMode && isBlockListOpen && <BlockList />}
 
-      {/* CENTRAL AREA: Workspace Canvas with selective reload logic */}
-      <main 
+      {/* CENTRAL AREA: Workspace Canvas */}
+      <main
         key={canvasKey}
-        className={`flex-1 relative ${canvasBg} transition-colors duration-500 canvas-animate-flash`}
+        className={`flex-1 relative transition-colors duration-500 canvas-animate-flash`}
       >
         <Canvas />
       </main>
 
       {/* RIGHT EXPANDABLE PANELS */}
-      {isDataPanelOpen && <DataPanel />}
+      {!isPreviewMode && isDataPanelOpen && <DataPanel />}
+      {!isPreviewMode && selectedBlockId && <PropertyInspector />}
 
-      {/* RIGHT SIDEBAR: Utility & Theme Control (60px) */}
-      <RightSidebar />
-      
-      {/* Subtle Grainy Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] contrast-125 brightness-125 z-[100]">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          <filter id="noiseFilter">
-            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
-          </filter>
-          <rect width="100%" height="100%" filter="url(#noiseFilter)" />
-        </svg>
-      </div>
+      {/* RIGHT SIDEBAR: Utility (Hidden in Preview) */}
+      {!isPreviewMode && <RightSidebar />}
     </div>
   );
 }
