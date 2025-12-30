@@ -87,7 +87,7 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
         color: overrides.style?.titleColor || gl02[3].value,
-        fontFamily: 'Space Grotesk'
+        fontFamily: 'var(--dna-font-family)'
     };
 
     const descStyle = {
@@ -100,7 +100,7 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
         color: overrides.style?.descColor || gl02[4].value,
-        fontFamily: 'Space Grotesk'
+        fontFamily: 'var(--dna-font-family)'
     };
 
     const px = overrides.layout?.paddingX || gl03[2].value;
@@ -152,9 +152,9 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
                     fontWeight: 600,
                     border: isPrimary ? 'none' : `${b.stroke}px solid rgba(0,0,0,0.1)`,
                     boxShadow: (isPrimary && b.shadow === 'true') ? '0 10px 30px -10px rgba(59, 130, 246, 0.5)' : 'none',
-                    fontFamily: gl01[0]?.value || 'Space Grotesk'
+                    fontFamily: 'var(--dna-font-family)'
                 }}
-                className="hover:scale-105 active:scale-95 transition-all duration-300 whitespace-nowrap"
+                className="active:scale-95 transition-all duration-300 whitespace-nowrap"
             >
                 {text}
             </button>

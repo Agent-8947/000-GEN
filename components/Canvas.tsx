@@ -5,8 +5,8 @@ import { ContentBlock } from './ContentBlock';
 import { Toolbar } from './Toolbar';
 
 export const Canvas: React.FC = () => {
-  const { theme, contentBlocks, viewportMode, cycleGrid, gridMode, globalSettings } = useStore();
-  const isDark = theme === 'dark';
+  const { contentBlocks, viewportMode, cycleGrid, gridMode, globalSettings } = useStore();
+  const isDark = globalSettings['GL11'].params[0].value === 'Dark';
   const isMobile = viewportMode === 'mobile';
 
   useEffect(() => {
@@ -42,7 +42,8 @@ export const Canvas: React.FC = () => {
           style={{
             backgroundColor: globalBg,
             backgroundSize: patternType === 'Noise' ? '200px 200px' : `${patternSize}px ${patternSize}px`,
-            backgroundAttachment: 'local'
+            backgroundAttachment: 'local',
+            fontSize: '16px'
           }}
           className={`relative transition-all duration-700 ease-in-out origin-top mx-auto overflow-y-auto overflow-x-hidden ${isMobile
             ? 'w-[375px] h-[667px] border-[10px] border-[#1A1A1A] rounded-[40px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)]'
@@ -88,8 +89,8 @@ export const Canvas: React.FC = () => {
               </div>
             )}
 
-            {contentBlocks.filter(b => b.isVisible).map(block => (
-              <ContentBlock key={block.id} block={block} />
+            {contentBlocks.map(block => (
+              <ContentBlock key={block.id} {...block} />
             ))}
           </div>
         </div>

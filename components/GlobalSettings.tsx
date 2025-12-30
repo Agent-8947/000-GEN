@@ -6,39 +6,60 @@ import { ChevronDown } from 'lucide-react';
 const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, param }) => {
   const updateParam = useStore(state => state.updateParam);
   const [isHovered, setIsHovered] = useState(false);
-  const isDragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
+  const startY = useRef(0);
   const startVal = useRef(0);
+
+  const [localVal, setLocalVal] = useState(param.value);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalVal(param.value);
+    }
+  }, [param.value, isDragging]);
+
+  const handleCommit = () => {
+    let val = parseFloat(localVal);
+    if (isNaN(val)) val = parseFloat(param.value);
+    const clamped = Math.max(param.min ?? 0, Math.min(param.max ?? 100, val)).toFixed(2);
+    updateParam(glId, param.id, clamped);
+    setLocalVal(clamped);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (param.type !== 'range') return;
-    isDragging.current = true;
+    setIsDragging(true);
     startX.current = e.clientX;
+    startY.current = e.clientY;
     startVal.current = parseFloat(param.value);
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'ew-resize';
+    document.body.style.cursor = 'all-scroll';
   };
 
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
+      if (!isDragging) return;
 
-      const delta = e.clientX - startX.current;
-      const sensitivity = 0.5;
-      const newVal = startVal.current + delta * sensitivity;
-      const formattedVal = newVal.toFixed(1);
+      const deltaX = e.clientX - startX.current;
+      const deltaY = startY.current - e.clientY;
+      const totalDelta = deltaX + deltaY;
+      const sensitivity = 0.2;
+      const newVal = startVal.current + totalDelta * sensitivity;
+      const formattedVal = newVal.toFixed(2);
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
         updateParam(glId, param.id, formattedVal);
+        setLocalVal(formattedVal);
       });
     };
 
     const handleMouseUp = () => {
-      if (isDragging.current) {
-        isDragging.current = false;
+      if (isDragging) {
+        setIsDragging(false);
         document.body.style.userSelect = '';
         document.body.style.cursor = '';
       }
@@ -51,22 +72,37 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
       window.removeEventListener('mouseup', handleMouseUp);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [glId, param.id, updateParam]);
+  }, [glId, param.id, updateParam, isDragging]);
 
   const renderValue = () => {
     switch (param.type) {
       case 'range':
         return (
-          <div
-            className="flex items-center gap-3 cursor-ew-resize active:text-blue-500 transition-colors"
-            onMouseDown={handleMouseDown}
-          >
-            <span className="font-mono text-[13px] min-w-[50px] text-right">{param.value}</span>
-            <div className="w-20 h-[1px] bg-current opacity-20 relative">
-              <div
-                className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-current rounded-full"
-                style={{ left: `${(parseFloat(param.value) / (param.max ?? 100)) * 100}%`, transform: 'translate(-50%, -50%)' }}
-              />
+          <div className="flex items-center gap-3 transition-colors">
+            <input
+              className="bg-transparent border-none outline-none text-right font-mono text-[13px] w-[50px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
+              value={localVal}
+              onChange={(e) => setLocalVal(e.target.value)}
+              onBlur={handleCommit}
+              onKeyDown={(e) => e.key === 'Enter' && handleCommit()}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{ color: isDragging ? useStore.getState().uiTheme.accents : undefined }}
+            />
+            <div
+              className="flex items-center gap-3 cursor-all-scroll group/scrub"
+              onMouseDown={handleMouseDown}
+            >
+              <div className="w-20 h-[1px] bg-current opacity-20 relative group-hover/scrub:opacity-40 transition-opacity">
+                <div
+                  className={`absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-current rounded-full transition-shadow ${isDragging ? '' : 'transition-all duration-300 ease-out'}`}
+                  style={{
+                    left: `${((parseFloat(param.value) || 0) - (param.min ?? 0)) / (Math.max(1, (param.max ?? 100) - (param.min ?? 0))) * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    color: isDragging ? useStore.getState().uiTheme.accents : undefined,
+                    boxShadow: isDragging ? `0 0 10px ${useStore.getState().uiTheme.accents}40` : undefined
+                  }}
+                />
+              </div>
             </div>
           </div>
         );
@@ -143,8 +179,13 @@ export const GlobalSettings: React.FC = () => {
 
   return (
     <div
-      className="w-[380px] h-full border-r animate-[slideIn_0.3s_ease-out] transition-colors duration-500 relative flex flex-col overflow-hidden"
-      style={{ backgroundColor: uiTheme.lightPanel, color: uiTheme.fonts, borderColor: uiTheme.elements }}
+      className="w-[380px] h-full border-r animate-[slideIn_0.3s_ease-out] transition-colors duration-500 relative flex flex-col overflow-hidden global-settings z-50"
+      style={{
+        backgroundColor: uiTheme.lightPanel,
+        color: uiTheme.fonts,
+        borderColor: uiTheme.elements,
+        borderRightWidth: 'var(--ui-stroke-width)'
+      }}
     >
       <style>{`
         @keyframes slideIn {
@@ -167,14 +208,17 @@ export const GlobalSettings: React.FC = () => {
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-5 pb-24">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-5 pb-24">
         {Object.entries(globalSettings).map(([id, group]) => {
           const g = group as { name: string; params: DNAParameter[] };
           return (
             <div
               key={id}
               className={`mb-2 rounded-xl transition-all duration-300 border ${activeGroup === id ? 'bg-black/[0.03]' : 'border-transparent'}`}
-              style={{ borderColor: activeGroup === id ? uiTheme.elements : 'transparent' }}
+              style={{
+                borderColor: activeGroup === id ? uiTheme.elements : 'transparent',
+                borderWidth: activeGroup === id ? 'var(--ui-stroke-width)' : '0px'
+              }}
             >
               <button
                 onClick={() => setActiveGroup(activeGroup === id ? null : id)}
@@ -216,7 +260,7 @@ export const GlobalSettings: React.FC = () => {
 
       <div
         className="absolute bottom-0 left-0 right-0 p-6 border-t z-10 flex justify-between items-center opacity-25 text-[10px] font-mono tracking-widest"
-        style={{ borderColor: uiTheme.elements }}
+        style={{ borderColor: uiTheme.elements, borderTopWidth: 'var(--ui-stroke-width)' }}
       >
         <span>70_SLOTS_INITIALIZED</span>
         <span>BUILD_1.2.0_DNA</span>

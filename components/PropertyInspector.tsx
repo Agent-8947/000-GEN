@@ -1,40 +1,60 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore } from '../store';
-import { Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus, ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload, Settings, Eye } from 'lucide-react';
+import { useStore, UI_THEME_PRESETS } from '../store';
+import { Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus, ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload, Eye } from 'lucide-react';
 
 // --- Local Controller Components ---
 
 const Scrubber: React.FC<{ label: string; value: string; min?: number; max?: number; onChange: (val: string) => void }> = ({ label, value, min = 0, max = 100, onChange }) => {
-  const isDragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
+  const startY = useRef(0);
   const startVal = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const [localVal, setLocalVal] = useState(value);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalVal(value);
+    }
+  }, [value, isDragging]);
+
+  const handleCommit = () => {
+    let val = parseFloat(localVal);
+    if (isNaN(val)) val = parseFloat(value) || 0;
+    const clamped = Math.max(min, Math.min(max, val)).toFixed(2);
+    onChange(clamped);
+    setLocalVal(clamped);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
+    setIsDragging(true);
     startX.current = e.clientX;
+    startY.current = e.clientY;
     startVal.current = parseFloat(value) || 0;
     document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'ew-resize';
+    document.body.style.cursor = 'all-scroll';
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      const delta = e.clientX - startX.current;
-      const sensitivity = 0.5;
-      const newVal = Math.max(min, Math.min(max, startVal.current + delta * sensitivity));
-      const formattedVal = newVal.toFixed(1);
+      if (!isDragging) return;
+      const deltaX = e.clientX - startX.current;
+      const deltaY = startY.current - e.clientY;
+      const totalDelta = deltaX + deltaY;
+      const sensitivity = 0.2;
+      const newVal = Math.max(min, Math.min(max, startVal.current + totalDelta * sensitivity));
+      const formattedVal = newVal.toFixed(2);
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
         onChange(formattedVal);
+        setLocalVal(formattedVal);
       });
     };
     const handleMouseUp = () => {
-      if (isDragging.current) {
-        isDragging.current = false;
+      if (isDragging) {
+        setIsDragging(false);
         document.body.style.userSelect = '';
         document.body.style.cursor = '';
       }
@@ -46,25 +66,42 @@ const Scrubber: React.FC<{ label: string; value: string; min?: number; max?: num
       window.removeEventListener('mouseup', handleMouseUp);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [value, min, max, onChange]);
+  }, [value, min, max, onChange, isDragging]);
 
   return (
-    <div className="flex items-center justify-between py-4 group/row">
+    <div className={`flex items-center justify-between py-4 group/row transition-all ${isDragging ? 'relative z-[100] scale-[1.02]' : 'z-0'}`}>
       <div className="flex flex-col">
         <span className="text-[11px] font-medium tracking-tight opacity-50 group-hover/row:opacity-100 transition-opacity">
           {label}
         </span>
       </div>
       <div
-        className="flex items-center gap-3 cursor-ew-resize active:text-blue-500 transition-colors"
-        onMouseDown={handleMouseDown}
+        className="flex items-center gap-3 transition-colors"
       >
-        <span className="font-mono text-[13px] min-w-[50px] text-right">{value}</span>
-        <div className="w-20 h-[1px] bg-current opacity-20 relative">
-          <div
-            className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-current rounded-full"
-            style={{ left: `${((parseFloat(value) || 0) - min) / (max - min) * 100}%`, transform: 'translate(-50%, -50%)' }}
-          />
+        <input
+          className="bg-transparent border-none outline-none text-right font-mono text-[13px] w-[50px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
+          value={localVal}
+          onChange={(e) => setLocalVal(e.target.value)}
+          onBlur={handleCommit}
+          onKeyDown={(e) => e.key === 'Enter' && handleCommit()}
+          onMouseDown={(e) => e.stopPropagation()}
+          style={{ color: isDragging ? useStore.getState().uiTheme.accents : undefined }}
+        />
+        <div
+          className="flex items-center gap-3 cursor-all-scroll group/scrub"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="w-20 h-[1px] bg-current opacity-20 relative group-hover/scrub:opacity-40 transition-opacity">
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 bg-current rounded-full transition-shadow ${isDragging ? '' : 'transition-all duration-300 ease-out'}`}
+              style={{
+                left: `${((parseFloat(value) || 0) - min) / Math.max(1, (max - min)) * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                color: isDragging ? useStore.getState().uiTheme.accents : undefined,
+                boxShadow: isDragging ? `0 0 10px ${useStore.getState().uiTheme.accents}40` : undefined
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -125,9 +162,24 @@ export const PropertyInspector: React.FC = () => {
   if (!activeBlock) return null;
 
   const overrides = activeBlock.localOverrides || {};
-  const isNavbar = activeBlock.type === 'B0101' || activeBlock.type === 'Navbar';
-  const isHero = activeBlock.type === 'B0201' || activeBlock.type === 'Hero';
-  const isFeatures = activeBlock.type === 'B0301' || activeBlock.type === 'Features';
+  const isNavbar = activeBlock.type?.startsWith('B01') || activeBlock.type === 'Navbar';
+  const isHero = activeBlock.type?.startsWith('B02') || activeBlock.type === 'Hero';
+  const isSkills = activeBlock.type?.startsWith('B03') || activeBlock.type === 'Skills';
+  const isArticle = activeBlock.type?.startsWith('B04') || activeBlock.type === 'Article';
+  const isPortfolio = activeBlock.type?.startsWith('B05') || activeBlock.type === 'Portfolio';
+  const isTimeline = activeBlock.type?.startsWith('B06') || activeBlock.type === 'Timeline';
+  const isStats = activeBlock.type?.startsWith('B08') || activeBlock.type === 'Stats';
+  const isSpacer = activeBlock.type?.startsWith('B09') || activeBlock.type === 'Spacer';
+  const isBadges = activeBlock.type?.startsWith('B15') || activeBlock.type === 'Badges';
+  const isPreview = activeBlock.type?.startsWith('B16') || activeBlock.type === 'Preview';
+  const isTestimonials = activeBlock.type?.startsWith('B22') || activeBlock.type === 'Testimonials' || activeBlock.type === 'Reviews';
+  const isContactForm = activeBlock.type?.startsWith('B13') || activeBlock.type === 'Contact' || activeBlock.type === 'ContactForm';
+  const isRadarChart = activeBlock.type === 'B2201' || activeBlock.type === 'RadarChart';
+  const isSocial = activeBlock.type?.startsWith('B24') || activeBlock.type === 'Socials';
+  const isAccordion = activeBlock.type?.startsWith('B07') || activeBlock.type === 'Accordion';
+  const isTabs = activeBlock.type?.startsWith('B10') || activeBlock.type === 'Tabs';
+  const isMarquee = activeBlock.type === 'B2202';
+  const isVariant03 = activeBlock.type?.endsWith('03');
 
   const tabBg = 'bg-black/5';
 
@@ -140,14 +192,15 @@ export const PropertyInspector: React.FC = () => {
 
   return (
     <aside
-      className="w-[380px] h-full border-l z-40 flex flex-col transition-colors duration-500"
+      className="w-[380px] h-full border-l z-40 flex flex-col transition-colors duration-500 property-inspector"
       style={{
         backgroundColor: uiTheme.lightPanel,
         borderColor: uiTheme.elements,
-        color: uiTheme.fonts
+        color: uiTheme.fonts,
+        borderLeftWidth: 'var(--ui-stroke-width)'
       }}
     >
-      <div className="flex-none p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements }}>
+      <div className="flex-none p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements, borderBottomWidth: 'var(--ui-stroke-width)' }}>
         <h2 className="text-xs font-bold uppercase tracking-widest opacity-40 flex items-center gap-2">
           {activeBlock.type} <span className="text-[10px] opacity-50 font-mono">#{activeBlock.id.slice(0, 4)}</span>
         </h2>
@@ -180,7 +233,7 @@ export const PropertyInspector: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className={`flex-1 overflow-y-auto custom-scrollbar px-8 py-6 ${tabBg}`}>
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-8 py-6 ${tabBg}`}>
         {activeTab === 'C' && (
           <div className="space-y-6">
             {isNavbar && (
@@ -552,8 +605,579 @@ export const PropertyInspector: React.FC = () => {
                         min={20} max={150}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'media.imageScale', val)}
                       />
+
+                      {activeBlock.type === 'B0202' && (
+                        <div className="space-y-2 pt-4 border-t border-black/5">
+                          <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Video URL Override</label>
+                          <input
+                            className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-mono"
+                            placeholder="https://..."
+                            value={overrides.media?.videoUrl || ''}
+                            onChange={(e) => updateBlockLocal(activeBlock.id, 'media.videoUrl', e.target.value)}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {isArticle && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Article Content</label>
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
+                    placeholder="Article Title"
+                    value={overrides.data?.title || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.title', e.target.value)}
+                  />
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
+                    placeholder="Article Subtitle"
+                    value={overrides.data?.subtitle || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.subtitle', e.target.value)}
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-64"
+                    placeholder="Article Body"
+                    value={overrides.data?.body || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.body', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {isPortfolio && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Gallery Items</label>
+                  <button
+                    onClick={() => {
+                      const newItems = [...(overrides.data?.items || []), { id: crypto.randomUUID(), type: 'image', url: '', title: 'New Project' }];
+                      updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                  >
+                    <Plus size={10} /> Add Item
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(overrides.data?.items || []).map((item: any, idx: number) => (
+                    <div key={item.id} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono opacity-20">Item_{idx + 1}</span>
+                        <button
+                          onClick={() => {
+                            const newItems = overrides.data.items.filter((i: any) => i.id !== item.id);
+                            updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                          }}
+                          className="p-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      <input
+                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30"
+                        placeholder="Title"
+                        value={item.title || ''}
+                        onChange={(e) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...newItems[idx], title: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                      <input
+                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 font-mono"
+                        placeholder="Media URL"
+                        value={item.url || ''}
+                        onChange={(e) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...newItems[idx], url: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isTimeline && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Milestones</label>
+                  <button
+                    onClick={() => {
+                      const newItems = [...(overrides.data?.items || []), { date: '2024', title: 'New Event', desc: 'Detailed description.' }];
+                      updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                  >
+                    Add Milestone
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {(overrides.data?.items || []).map((item: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-3 relative group">
+                      <button
+                        onClick={() => {
+                          const newItems = overrides.data.items.filter((_: any, i: number) => i !== idx);
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                      <Scrubber
+                        label="Date / Year"
+                        value={item.date || '2024'}
+                        min={1900} max={2100}
+                        onChange={(val) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...item, date: val };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                      <input
+                        className="w-full bg-white border border-black/5 rounded-lg p-2 text-xs font-semibold outline-none"
+                        placeholder="Title"
+                        value={item.title || ''}
+                        onChange={(e) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...item, title: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                      <textarea
+                        className="w-full bg-white border border-black/5 rounded-lg p-2 text-xs outline-none h-16"
+                        placeholder="Description"
+                        value={item.desc || ''}
+                        onChange={(e) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...item, desc: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isStats && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Metrics</label>
+                  <button
+                    onClick={() => {
+                      const newStats = [...(overrides.data?.stats || []), { value: '0', label: 'Metric' }];
+                      updateBlockLocal(activeBlock.id, 'data.stats', newStats);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                  >
+                    Add Metric
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(overrides.data?.stats || []).map((stat: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 flex items-center gap-3">
+                      <div className="flex-1 space-y-2">
+                        <Scrubber
+                          label="Value"
+                          value={stat.value.replace(/[^0-9.-]/g, '') || '0'}
+                          min={0} max={1000000}
+                          onChange={(val) => {
+                            const newStats = [...overrides.data.stats];
+                            // Try to preserve suffix if existed (like %)
+                            const original = stat.value;
+                            const suffix = original.replace(/[0-9.-]/g, '');
+                            newStats[idx] = { ...stat, value: val + suffix };
+                            updateBlockLocal(activeBlock.id, 'data.stats', newStats);
+                          }}
+                        />
+                        <input
+                          className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none"
+                          placeholder="Label"
+                          value={stat.label}
+                          onChange={(e) => {
+                            const newStats = [...overrides.data.stats];
+                            newStats[idx] = { ...stat, label: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.stats', newStats);
+                          }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newStats = overrides.data.stats.filter((_: any, i: number) => i !== idx);
+                          updateBlockLocal(activeBlock.id, 'data.stats', newStats);
+                        }}
+                        className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isBadges && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Scrubber
+                    label="Vertical Spacing"
+                    value={overrides.layout?.paddingY || '40'}
+                    min={0} max={200}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
+                  />
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Tags (Comma Separated)</label>
+                    <textarea
+                      className="w-full bg-black/[0.03] border border-black/5 rounded-xl p-4 text-xs font-mono outline-none h-32"
+                      placeholder="Tag1, Tag2, Tag3"
+                      value={(overrides.data?.tags || []).join(', ')}
+                      onChange={(e) => {
+                        const tags = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
+                        updateBlockLocal(activeBlock.id, 'data.tags', tags);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isPreview && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none"
+                    placeholder="Title"
+                    value={overrides.data?.title || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.title', e.target.value)}
+                  />
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none font-mono"
+                    placeholder="URL"
+                    value={overrides.data?.url || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.url', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {isSocial && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Platforms</label>
+                  <button
+                    onClick={() => {
+                      const newPlatforms = [...(overrides.data?.platforms || []), { type: 'twitter', url: 'https://' }];
+                      updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                  >
+                    Add Platform
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(overrides.data?.platforms || []).map((p: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
+                      <select
+                        className="w-full bg-white border border-black/5 rounded p-2 text-[10px] font-bold outline-none"
+                        value={p.type}
+                        onChange={(e) => {
+                          const newPlatforms = [...overrides.data.platforms];
+                          newPlatforms[idx] = { ...p, type: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                        }}
+                      >
+                        <option value="twitter">Twitter</option>
+                        <option value="github">GitHub</option>
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="globe">Website</option>
+                      </select>
+                      <input
+                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none font-mono"
+                        value={p.url}
+                        onChange={(e) => {
+                          const newPlatforms = [...overrides.data.platforms];
+                          newPlatforms[idx] = { ...p, url: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          const newPlatforms = overrides.data.platforms.filter((_: any, i: number) => i !== idx);
+                          updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                        }}
+                        className="absolute top-2 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isSpacer && (
+              <div className="space-y-6">
+                <Scrubber
+                  label="Height (px)"
+                  value={overrides.layout?.height || '80'}
+                  min={0} max={400}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.height', val)}
+                />
+              </div>
+            )}
+
+            {isTestimonials && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Client Reviews</label>
+                  <button
+                    onClick={() => {
+                      const newItems = [...(overrides.data?.items || []), { quote: 'Experience modular perfection.', name: 'New Client', role: 'Executive' }];
+                      updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                  >
+                    Add Review
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(overrides.data?.items || []).map((item: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
+                      <textarea
+                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 italic"
+                        value={item.quote}
+                        placeholder="Quote"
+                        onChange={(e) => {
+                          const newItems = [...overrides.data.items];
+                          newItems[idx] = { ...item, quote: e.target.value };
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          className="w-1/2 bg-white border border-black/5 rounded p-2 text-[10px] font-bold outline-none"
+                          value={item.name}
+                          placeholder="Name"
+                          onChange={(e) => {
+                            const newItems = [...overrides.data.items];
+                            newItems[idx] = { ...item, name: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                          }}
+                        />
+                        <input
+                          className="w-1/2 bg-white border border-black/5 rounded p-2 text-[10px] outline-none"
+                          value={item.role}
+                          placeholder="Role"
+                          onChange={(e) => {
+                            const newItems = [...overrides.data.items];
+                            newItems[idx] = { ...item, role: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                          }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newItems = overrides.data.items.filter((_: any, i: number) => i !== idx);
+                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                        }}
+                        className="absolute top-2 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {isMarquee && (
+                  <div className="pt-4 border-t border-black/5 mt-4">
+                    <Scrubber
+                      label="Scroll Speed"
+                      value={overrides.layout?.speed || '40'}
+                      min={10} max={200}
+                      onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.speed', val)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isContactForm && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Header Title</label>
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none"
+                    value={overrides.data?.title || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.title', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Subtitle</label>
+                  <input
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none"
+                    value={overrides.data?.subtitle || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.subtitle', e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {isRadarChart && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Radar Data</label>
+                  <button
+                    onClick={() => {
+                      const newAxis = [...(overrides.data?.axis || []), { label: 'New Metric', value: 50 }];
+                      updateBlockLocal(activeBlock.id, 'data.axis', newAxis);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                  >
+                    Add Axis
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(overrides.data?.axis || []).map((axis: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-4 relative group">
+                      <div className="flex items-center justify-between">
+                        <input
+                          className="bg-transparent border-b border-transparent hover:border-black/10 focus:border-blue-500/50 outline-none text-[10px] font-black uppercase tracking-widest flex-1"
+                          value={axis.label}
+                          onChange={(e) => {
+                            const newAxis = [...overrides.data.axis];
+                            newAxis[idx] = { ...axis, label: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.axis', newAxis);
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const newAxis = overrides.data.axis.filter((_: any, i: number) => i !== idx);
+                            updateBlockLocal(activeBlock.id, 'data.axis', newAxis);
+                          }}
+                          className="p-1 text-red-500 opacity-20 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      <Scrubber
+                        label="Metric Value"
+                        value={axis.value.toString()}
+                        min={0} max={100}
+                        onChange={(val) => {
+                          const newAxis = [...overrides.data.axis];
+                          newAxis[idx] = { ...axis, value: parseFloat(val) };
+                          updateBlockLocal(activeBlock.id, 'data.axis', newAxis);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isSkills && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Skill Groups</label>
+                  <button
+                    onClick={() => {
+                      const newGroups = [...(overrides.data?.groups || []), { id: crypto.randomUUID(), title: 'New Group', items: [] }];
+                      updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                  >
+                    <Plus size={10} /> Add Group
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {(overrides.data?.groups || []).map((group: any, gIdx: number) => (
+                    <div key={group.id} className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <input
+                          className="flex-1 bg-transparent border-b border-transparent hover:border-black/10 focus:border-blue-500/50 outline-none text-sm font-bold uppercase tracking-tight"
+                          value={group.title}
+                          onChange={(e) => {
+                            const newGroups = [...overrides.data.groups];
+                            newGroups[gIdx] = { ...group, title: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const newGroups = overrides.data.groups.filter((g: any) => g.id !== group.id);
+                            updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                          }}
+                          className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 pl-2 border-l-2 border-black/5">
+                        {(group.items || []).map((item: any, iIdx: number) => (
+                          <div key={iIdx} className="flex items-center gap-2 group/item">
+                            <input
+                              className="flex-1 bg-white border border-black/5 rounded p-1.5 text-[12px]"
+                              value={item.name}
+                              onChange={(e) => {
+                                const newGroups = [...overrides.data.groups];
+                                const newItems = [...group.items];
+                                newItems[iIdx] = { ...item, name: e.target.value };
+                                newGroups[gIdx] = { ...group, items: newItems };
+                                updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                              }}
+                            />
+                            <div className="w-24">
+                              <Scrubber
+                                label="Level"
+                                value={item.level.toString()}
+                                min={0} max={100}
+                                onChange={(val) => {
+                                  const newGroups = [...overrides.data.groups];
+                                  const newItems = [...group.items];
+                                  newItems[iIdx] = { ...item, level: Math.round(parseFloat(val)) };
+                                  newGroups[gIdx] = { ...group, items: newItems };
+                                  updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                                }}
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                const newGroups = [...overrides.data.groups];
+                                const newItems = group.items.filter((_: any, idx: number) => idx !== iIdx);
+                                newGroups[gIdx] = { ...group, items: newItems };
+                                updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                              }}
+                              className="p-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const newGroups = [...overrides.data.groups];
+                            const newItems = [...(group.items || []), { name: 'Skill', level: 50 }];
+                            newGroups[gIdx] = { ...group, items: newItems };
+                            updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
+                          }}
+                          className="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-2 hover:underline"
+                        >
+                          + Add Item
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -647,6 +1271,140 @@ export const PropertyInspector: React.FC = () => {
                 />
               </div>
             )}
+
+            {isArticle && (
+              <div className="space-y-6">
+                <Scrubber
+                  label="Max Width (px)"
+                  value={overrides.layout?.maxWidth || '800'}
+                  min={400} max={1600}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.maxWidth', val)}
+                />
+                <Scrubber
+                  label="Padding Y (px)"
+                  value={overrides.layout?.paddingY || '80'}
+                  min={0} max={200}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
+                />
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Text Alignment</label>
+                  <div className="flex p-0.5 bg-black/5 rounded-lg">
+                    {['left', 'center', 'right'].map(align => (
+                      <button
+                        key={align}
+                        onClick={() => updateBlockLocal(activeBlock.id, 'layout.textAlign', align)}
+                        className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.textAlign === align ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                      >
+                        {align}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isPortfolio && (
+              <div className="space-y-6">
+                <Scrubber
+                  label="Columns"
+                  value={overrides.layout?.columns || '3'}
+                  min={1} max={4}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.columns', Math.round(parseFloat(val)).toString())}
+                />
+                <Scrubber
+                  label="Gap (px)"
+                  value={overrides.layout?.gap || '24'}
+                  min={0} max={100}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.gap', val)}
+                />
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
+                  <div className="flex p-0.5 bg-black/5 rounded-lg">
+                    {[
+                      { id: 'aspect-square', label: '1:1' },
+                      { id: 'aspect-video', label: '16:9' },
+                      { id: 'aspect-[3/4]', label: '3:4' },
+                      { id: 'aspect-auto', label: 'Auto' }
+                    ].map(asp => (
+                      <button
+                        key={asp.id}
+                        onClick={() => updateBlockLocal(activeBlock.id, 'layout.aspect', asp.id)}
+                        className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                      >
+                        {asp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Scrubber
+                  label="Padding Y (px)"
+                  value={overrides.layout?.paddingY || '80'}
+                  min={0} max={200}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
+                />
+              </div>
+            )}
+
+            {isSpacer && (
+              <div className="space-y-6">
+                <Scrubber
+                  label="Height (px)"
+                  value={overrides.layout?.height || (parseFloat(globalSettings['GL03'].params[0].value) * 4).toString()}
+                  min={0} max={400}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.height', val)}
+                />
+              </div>
+            )}
+
+            {(isTimeline || isStats || isTestimonials || isMarquee) && (
+              <div className="space-y-6">
+                {(isStats || isTestimonials) && (
+                  <Scrubber
+                    label="Columns"
+                    value={overrides.layout?.columns || '3'}
+                    min={1} max={6}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.columns', Math.round(parseFloat(val)).toString())}
+                  />
+                )}
+                {/* Scroll Speed moved to Control tab */}
+                <Scrubber
+                  label="Padding Y (px)"
+                  value={overrides.layout?.paddingY || '80'}
+                  min={0} max={200}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
+                />
+              </div>
+            )}
+
+            {(isBadges || isPreview || isContactForm || isRadarChart || isSocial) && (
+              <div className="space-y-6">
+                <Scrubber
+                  label="Padding Y (px)"
+                  value={overrides.layout?.paddingY || '80'}
+                  min={0} max={200}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
+                />
+                {isPreview && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
+                    <div className="flex p-0.5 bg-black/5 rounded-lg">
+                      {[
+                        { id: '16/9', label: '16:9' },
+                        { id: '4/3', label: '4:3' }
+                      ].map(asp => (
+                        <button
+                          key={asp.id}
+                          onClick={() => updateBlockLocal(activeBlock.id, 'layout.aspect', asp.id)}
+                          className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                        >
+                          {asp.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -735,6 +1493,8 @@ export const PropertyInspector: React.FC = () => {
                         min={20} max={150}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'media.imageScale', val)}
                       />
+
+                      {/* Video URL moved to Control tab */}
                     </div>
                   </div>
 
@@ -795,6 +1555,32 @@ export const PropertyInspector: React.FC = () => {
                     )}
                   </div>
                 </>
+              )}
+
+              {isSkills && (
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium opacity-50">Accent Override</span>
+                    <div className="relative">
+                      <input
+                        type="color"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        value={overrides.style?.accent || globalSettings['GL02'].params[2].value}
+                        onChange={(e) => updateBlockLocal(activeBlock.id, 'style.accent', e.target.value)}
+                      />
+                      <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.accent || globalSettings['GL02'].params[2].value }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium opacity-50">Use Global Radius</span>
+                    <button
+                      onClick={() => updateBlockLocal(activeBlock.id, 'style.useGlobalRadius', !overrides.style?.useGlobalRadius)}
+                      className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.useGlobalRadius !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.style?.useGlobalRadius !== false ? 'translate-x-4' : ''}`} />
+                    </button>
+                  </div>
+                </div>
               )}
 
               <Scrubber
@@ -877,6 +1663,86 @@ export const PropertyInspector: React.FC = () => {
                   )}
                 </div>
               )}
+
+              {isArticle && (
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Typography (B0401)</label>
+                  <div className="flex items-center justify-between py-2 border-b border-black/5">
+                    <span className="text-[11px] font-medium opacity-50">Use Global Font</span>
+                    <button
+                      onClick={() => updateBlockLocal(activeBlock.id, 'style.useGlobalFont', overrides.style?.useGlobalFont !== false ? false : true)}
+                      className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.useGlobalFont !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.style?.useGlobalFont !== false ? 'translate-x-4' : ''}`} />
+                    </button>
+                  </div>
+
+                  {overrides.style?.useGlobalFont === false && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Local Font Family</label>
+                      <select
+                        className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-2 text-sm outline-none focus:border-blue-500/30"
+                        value={overrides.style?.fontFamily || 'Space Grotesk'}
+                        onChange={(e) => updateBlockLocal(activeBlock.id, 'style.fontFamily', e.target.value)}
+                      >
+                        {(globalSettings['GL01'].params[7].options || []).map((opt: string) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <Scrubber
+                    label="Font Size"
+                    value={overrides.style?.fontSize || '16'}
+                    min={12} max={48}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'style.fontSize', val)}
+                  />
+
+                  <Scrubber
+                    label="Line Height"
+                    value={overrides.style?.lineHeight || '1.6'}
+                    min={1.0} max={2.5}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'style.lineHeight', val)}
+                  />
+                </div>
+              )}
+
+              {isPortfolio && (
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Visual Style (B0501)</label>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium opacity-50">Show Captions</span>
+                    <button
+                      onClick={() => updateBlockLocal(activeBlock.id, 'style.showCaptions', overrides.style?.showCaptions !== false ? false : true)}
+                      className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.showCaptions !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.style?.showCaptions !== false ? 'translate-x-4' : ''}`} />
+                    </button>
+                  </div>
+
+                  <Scrubber
+                    label="Hover Scale"
+                    value={overrides.style?.hoverScale || '1.05'}
+                    min={1.0} max={1.2}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'style.hoverScale', val)}
+                  />
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium opacity-50">Background Fill</span>
+                    <div className="relative">
+                      <input
+                        type="color"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        value={overrides.style?.bgFill || '#FFFFFF'}
+                        onChange={(e) => updateBlockLocal(activeBlock.id, 'style.bgFill', e.target.value)}
+                      />
+                      <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.bgFill || '#FFFFFF' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -896,7 +1762,27 @@ export const PropertyInspector: React.FC = () => {
               onChange={(val) => updateBlockLocal(activeBlock.id, 'effects.shadowAlpha', val)}
             />
 
-            {(activeBlock.type === 'Hero' || activeBlock.type === 'B0201') && (
+            {isVariant03 && (
+              <div className="space-y-4 pt-4 border-t border-black/5 mt-4">
+                <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold flex items-center gap-2">
+                  <Zap size={10} /> Physics Engine
+                </label>
+                <Scrubber
+                  label="Field Strength"
+                  value={overrides.physics?.strength || '0.5'}
+                  min={0.1} max={2.0}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.strength', val)}
+                />
+                <Scrubber
+                  label="System Friction"
+                  value={overrides.physics?.friction || '0.1'}
+                  min={0.01} max={1.0}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.friction', val)}
+                />
+              </div>
+            )}
+
+            {(activeBlock.type === 'Hero' || activeBlock.type === 'B0201' || isSkills) && (
               <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
                 <div className="flex items-center justify-between py-2">
                   <span className="text-[11px] font-medium opacity-50 uppercase tracking-widest">Custom Animation</span>
@@ -932,6 +1818,7 @@ export const PropertyInspector: React.FC = () => {
                 )}
               </div>
             )}
+
 
             {(activeBlock.type === 'Navbar' || activeBlock.type === 'B0101') && (
               <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
@@ -973,6 +1860,24 @@ export const PropertyInspector: React.FC = () => {
                 <option value="scale-up">Scale Up</option>
               </select>
             </div>
+
+            {isVariant03 && (
+              <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
+                <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Physics Logic (Variant 03)</label>
+                <Scrubber
+                  label="Physics Strength"
+                  value={overrides.physics?.strength || '0.5'}
+                  min={0} max={1}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.strength', val)}
+                />
+                <Scrubber
+                  label="Physics Friction"
+                  value={overrides.physics?.friction || '0.1'}
+                  min={0} max={0.5}
+                  onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.friction', val)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -992,6 +1897,7 @@ export const RightSidebar: React.FC = () => {
   const {
     uiTheme,
     updateUITheme,
+    applyThemePreset,
     isPreviewMode,
     togglePreviewMode,
     isDataPanelOpen,
@@ -1002,15 +1908,15 @@ export const RightSidebar: React.FC = () => {
     ioFeedback
   } = useStore();
 
-  const [isColorOpen, setIsColorOpen] = useState(false);
 
   return (
     <aside
-      className="w-[60px] h-full border-l z-50 flex flex-col items-center py-6 transition-colors duration-500 relative"
+      className="w-[60px] h-full border-l z-50 flex flex-col items-center py-6 transition-colors duration-500 relative right-sidebar"
       style={{
         backgroundColor: uiTheme.lightPanel,
         borderColor: uiTheme.elements,
-        color: uiTheme.fonts
+        color: uiTheme.fonts,
+        borderLeftWidth: 'var(--ui-stroke-width)'
       }}
     >
       <div className="flex flex-col items-center gap-2">
@@ -1027,85 +1933,6 @@ export const RightSidebar: React.FC = () => {
           <Eye size={22} strokeWidth={1.5} />
         </button>
 
-        {/* UI Settings (Color) */}
-        <div className="relative">
-          <button
-            onClick={() => setIsColorOpen(!isColorOpen)}
-            onClick={() => setIsColorOpen(!isColorOpen)}
-            className="p-3 mb-4 transition-all duration-300 hover:brightness-95 rounded-lg"
-            style={{ color: isColorOpen ? uiTheme.accents : uiTheme.elements }}
-          >
-            <Settings size={22} strokeWidth={1.5} />
-          </button>
-
-          {isColorOpen && (
-            <div className="absolute right-full mr-4 top-0 bg-white border border-gray-200 rounded-xl shadow-xl p-4 flex flex-col gap-3 z-[100] w-56">
-              <div className="text-[10px] font-bold text-gray-400 mb-1 tracking-wider uppercase">UI Theme (5-Color)</div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-gray-600">Fonts</span>
-                  <div className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden shadow-sm" style={{ backgroundColor: uiTheme.fonts }}>
-                    <input
-                      type="color"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      value={uiTheme.fonts}
-                      onChange={(e) => updateUITheme('fonts', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-gray-600">Dark Panel</span>
-                  <div className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden shadow-sm" style={{ backgroundColor: uiTheme.darkPanel }}>
-                    <input
-                      type="color"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      value={uiTheme.darkPanel}
-                      onChange={(e) => updateUITheme('darkPanel', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-gray-600">Light Panel</span>
-                  <div className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden shadow-sm" style={{ backgroundColor: uiTheme.lightPanel }}>
-                    <input
-                      type="color"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      value={uiTheme.lightPanel}
-                      onChange={(e) => updateUITheme('lightPanel', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-gray-600">Elements</span>
-                  <div className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden shadow-sm" style={{ backgroundColor: uiTheme.elements }}>
-                    <input
-                      type="color"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      value={uiTheme.elements}
-                      onChange={(e) => updateUITheme('elements', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-gray-600">Accents</span>
-                  <div className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden shadow-sm" style={{ backgroundColor: uiTheme.accents }}>
-                    <input
-                      type="color"
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      value={uiTheme.accents}
-                      onChange={(e) => updateUITheme('accents', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
 
         <button
           onClick={() => {
