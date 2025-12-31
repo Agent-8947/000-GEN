@@ -67,9 +67,9 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
         const useGlobal = !typo || typo.useGlobal !== false;
         if (useGlobal) return defaults;
         return {
-            fontSize: (typo.fontSize || defaults.fontSize.replace('px', '')) + 'px',
+            fontSize: (typo.fontSize || String(defaults.fontSize ?? '').replace('px', '')) + 'px',
             fontWeight: typo.fontWeight || defaults.fontWeight,
-            letterSpacing: (typo.letterSpacing !== undefined ? typo.letterSpacing : defaults.letterSpacing.replace('em', '')) + 'em',
+            letterSpacing: (typo.letterSpacing !== undefined ? typo.letterSpacing : String(defaults.letterSpacing ?? '').replace('em', '')) + 'em',
             lineHeight: typo.lineHeight || defaults.lineHeight,
             // Prioritize local uppercase preference if defined, else fallback to global
             textTransform: (typo.uppercase !== undefined ? (typo.uppercase ? 'uppercase' : 'none') : (gl01[5].value === 'true' ? 'uppercase' : 'none')) as any,

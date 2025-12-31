@@ -72,7 +72,7 @@ export const Skills: React.FC<SkillsProps> = ({ id, type, localOverrides }) => {
             style={{
                 paddingTop: `${paddingTop}px`,
                 paddingBottom: `${paddingBottom}px`,
-                backgroundColor: style?.background || 'transparent',
+                backgroundColor: style?.bgFill || style?.background || style?.backgroundColor || 'transparent',
                 color: style?.color || textPrim
             }}
         >

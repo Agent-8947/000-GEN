@@ -34,7 +34,7 @@ export const Portfolio: React.FC<{ id: string, localOverrides: any }> = ({ id, l
     };
 
     return (
-        <section id={id} className="w-full px-6 transition-all duration-500 overflow-hidden">
+        <section id={id} style={{ backgroundColor: style.bgFill || 'transparent' }} className="w-full px-6 transition-all duration-500 overflow-hidden">
             <div className="max-w-7xl mx-auto" style={{ paddingTop: `${layout.paddingY}px`, paddingBottom: `${layout.paddingY}px` }}>
                 <motion.div
                     initial={{ opacity: 0, y: animEntranceY }}

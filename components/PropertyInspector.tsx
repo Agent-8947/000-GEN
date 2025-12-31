@@ -1,7 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, UI_THEME_PRESETS } from '../store';
-import { Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus, ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload, Eye } from 'lucide-react';
+import { 
+  Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus, 
+  ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload, 
+  Eye, Ban, Undo2, Redo2, Monitor, Smartphone, Grid3X3, Settings 
+} from 'lucide-react';
 
 // --- Local Controller Components ---
 
@@ -71,7 +75,7 @@ const Scrubber: React.FC<{ label: string; value: string; min?: number; max?: num
   return (
     <div className={`flex items-center justify-between py-4 group/row transition-all ${isDragging ? 'relative z-[100] scale-[1.02]' : 'z-0'}`}>
       <div className="flex flex-col">
-        <span className="text-[11px] font-medium tracking-tight opacity-50 group-hover/row:opacity-100 transition-opacity">
+        <span className="text-xs font-medium tracking-tight opacity-50 group-hover/row:opacity-100 transition-opacity">
           {label}
         </span>
       </div>
@@ -79,13 +83,13 @@ const Scrubber: React.FC<{ label: string; value: string; min?: number; max?: num
         className="flex items-center gap-3 transition-colors"
       >
         <input
-          className="bg-transparent border-none outline-none text-right font-mono text-[13px] w-[50px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
+          className="bg-transparent border-none outline-none text-right font-mono text-sm w-[60px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
           value={localVal}
           onChange={(e) => setLocalVal(e.target.value)}
           onBlur={handleCommit}
           onKeyDown={(e) => e.key === 'Enter' && handleCommit()}
           onMouseDown={(e) => e.stopPropagation()}
-          style={{ color: isDragging ? useStore.getState().uiTheme.accents : undefined }}
+          style={{ color: isDragging ? useStore.getState().uiTheme.accents : 'inherit' }}
         />
         <div
           className="flex items-center gap-3 cursor-all-scroll group/scrub"
@@ -119,9 +123,9 @@ const TypoControls: React.FC<{
   return (
     <div className="space-y-1 py-1 mt-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 italic">{label} Typo</span>
+        <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-30 italic">{label} Typo</span>
         <div className="flex items-center gap-2">
-          <span className="text-[8px] opacity-40 uppercase tracking-widest font-mono">Use Global</span>
+          <span className="text-xs opacity-40 uppercase tracking-widest font-mono">Use Global</span>
           <button
             onClick={() => onUpdate(`${basePath}.useGlobal`, !t.useGlobal)}
             className={`w-7 h-3.5 rounded-full transition-colors relative ${t.useGlobal ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -146,6 +150,56 @@ const TypoControls: React.FC<{
               <div className={`absolute top-0.5 left-0.5 w-2.5 h-2.5 bg-white rounded-full transition-transform ${t.uppercase ? 'translate-x-3.5' : ''}`} />
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ColorPicker: React.FC<{
+  label: string;
+  value: string | null | undefined;
+  defaultValue: string;
+  onChange: (val: string | null) => void;
+}> = ({ label, value, defaultValue, onChange }) => {
+  const isInherited = value === null || value === undefined;
+  const displayColor = isInherited ? defaultValue : value;
+
+  return (
+    <div className="flex items-center justify-between py-2 group/color">
+      <span className="text-xs font-medium opacity-50 group-hover/color:opacity-100 transition-opacity">{label}</span>
+      <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-2">
+          {!isInherited && (
+            <button
+              onClick={() => onChange(null)}
+              className="p-1 hover:text-red-500 opacity-30 hover:opacity-100 transition-opacity"
+              title="Reset to Global"
+            >
+              <Ban size={14} />
+            </button>
+          )}
+          <div className="relative">
+            <input
+              type="color"
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+              value={displayColor || '#ffffff'}
+              onChange={(e) => onChange(e.target.value)}
+            />
+            <div
+              className={`w-6 h-6 rounded-full border border-black/10 flex items-center justify-center overflow-hidden transition-all ${isInherited ? 'opacity-40 grayscale' : 'shadow-sm'}`}
+              style={{ backgroundColor: displayColor || 'transparent' }}
+            >
+              {isInherited && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-full h-[1px] bg-red-500/40 rotate-45" />
+                </div>
+              )}
+            </div>
+          </div>
+          {isInherited && (
+            <span className="text-[10px] font-mono opacity-20 uppercase tracking-tighter">Auto</span>
+          )}
         </div>
       </div>
     </div>
@@ -180,14 +234,15 @@ export const PropertyInspector: React.FC = () => {
   const isTabs = activeBlock.type?.startsWith('B10') || activeBlock.type === 'Tabs';
   const isMarquee = activeBlock.type === 'B2202';
   const isVariant03 = activeBlock.type?.endsWith('03');
+  const isB0102 = activeBlock.type === 'B0102';
 
   const tabBg = 'bg-black/5';
 
   const tabs = [
-    { id: 'C', icon: <Type size={14} />, label: 'Control' },
-    { id: 'L', icon: <Layout size={14} />, label: 'Layout' },
-    { id: 'S', icon: <Palette size={14} />, label: 'Style' },
-    { id: 'E', icon: <Zap size={14} />, label: 'Effects' }
+    { id: 'C', icon: <Type size={16} />, label: 'Control' },
+    { id: 'L', icon: <Layout size={16} />, label: 'Layout' },
+    { id: 'S', icon: <Palette size={16} />, label: 'Style' },
+    { id: 'E', icon: <Zap size={16} />, label: 'Effects' }
   ] as const;
 
   return (
@@ -201,11 +256,11 @@ export const PropertyInspector: React.FC = () => {
       }}
     >
       <div className="flex-none p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements, borderBottomWidth: 'var(--ui-stroke-width)' }}>
-        <h2 className="text-xs font-bold uppercase tracking-widest opacity-40 flex items-center gap-2">
-          {activeBlock.type} <span className="text-[10px] opacity-50 font-mono">#{activeBlock.id.slice(0, 4)}</span>
+        <h2 className="text-sm font-bold uppercase tracking-widest opacity-40 flex items-center gap-2">
+          {activeBlock.type} <span className="text-xs opacity-50 font-mono">#{activeBlock.id.slice(0, 4)}</span>
         </h2>
         <button onClick={() => setSelectedBlock(null)} className="p-2 opacity-20 hover:opacity-100 transition-opacity">
-          <X size={18} />
+          <X size={20} />
         </button>
       </div>
       <style>{`
@@ -227,7 +282,7 @@ export const PropertyInspector: React.FC = () => {
               }`}
           >
             {tab.icon}
-            <span className="text-[9px] uppercase tracking-widest font-bold">{tab.label[0]}</span>
+            <span className="text-xs uppercase tracking-widest font-bold">{tab.label[0]}</span>
           </button>
         ))}
       </div>
@@ -240,7 +295,7 @@ export const PropertyInspector: React.FC = () => {
               <>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Brand Logo / Icon</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Brand Logo / Icon</label>
                   </div>
 
                   <div className="space-y-3">
@@ -259,7 +314,7 @@ export const PropertyInspector: React.FC = () => {
                     />
 
                     <div className="flex items-center justify-between py-2 border-t border-black/5 mt-2">
-                      <span className="text-[11px] font-medium opacity-50">Show Icon</span>
+                      <span className="text-xs font-medium opacity-50">Show Icon</span>
                       <button
                         onClick={() => updateBlockLocal(activeBlock.id, 'data.showIcon', overrides.data?.showIcon !== false ? false : true)}
                         className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.showIcon !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -273,13 +328,13 @@ export const PropertyInspector: React.FC = () => {
                         <div className="flex p-0.5 bg-black/5 rounded-lg">
                           <button
                             onClick={() => updateBlockLocal(activeBlock.id, 'data.iconType', 'default')}
-                            className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType !== 'custom' ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                            className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType !== 'custom' ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                           >
                             Default
                           </button>
                           <button
                             onClick={() => updateBlockLocal(activeBlock.id, 'data.iconType', 'custom')}
-                            className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType === 'custom' ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                            className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType === 'custom' ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                           >
                             Custom
                           </button>
@@ -306,9 +361,9 @@ export const PropertyInspector: React.FC = () => {
                               {overrides.data?.customIconUrl ? (
                                 <img src={overrides.data.customIconUrl} className="h-12 w-12 object-contain rounded-md" alt="Custom Logo" />
                               ) : (
-                                <Upload size={20} className="opacity-20" />
+                                <Upload size={24} className="opacity-20" />
                               )}
-                              <span className="text-[9px] uppercase tracking-widest opacity-40 font-bold">Upload Custom Icon</span>
+                              <span className="text-xs uppercase tracking-widest opacity-40 font-bold">Upload Custom Icon</span>
                             </div>
                           </div>
                         )}
@@ -317,9 +372,34 @@ export const PropertyInspector: React.FC = () => {
                   </div>
                 </div>
 
+                {isB0102 && (
+                  <div className="space-y-4 pt-4 border-t border-black/5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Free Positioning</label>
+                      <button
+                        onClick={() => {
+                          updateBlockLocal(activeBlock.id, 'style.positionX', 0);
+                          updateBlockLocal(activeBlock.id, 'style.positionY', 0);
+                        }}
+                        className="p-1 px-2 bg-gray-200 text-black text-xs rounded uppercase font-bold hover:bg-gray-300 transition-colors flex items-center gap-1"
+                      >
+                        <RefreshCcw size={12} /> Reset
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 opacity-30 pointer-events-none select-none">
+                      <div className="bg-black/5 rounded p-2 text-center text-[10px] font-mono">
+                        X: {Math.round(overrides.style?.positionX || 0)}
+                      </div>
+                      <div className="bg-black/5 rounded p-2 text-center text-[10px] font-mono">
+                        Y: {Math.round(overrides.style?.positionY || 0)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Action Button</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Action Button</label>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'data.showActionButton', overrides.data?.showActionButton !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.showActionButton !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -333,8 +413,8 @@ export const PropertyInspector: React.FC = () => {
                       <input
                         className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
                         placeholder="Button Label"
-                        value={overrides.data?.actionButtonText || 'Start'}
-                        onChange={(e) => updateBlockLocal(activeBlock.id, 'data.actionButtonText', e.target.value)}
+                        value={isB0102 ? (overrides.data?.ctaText || '') : (overrides.data?.actionButtonText || 'Start')}
+                        onChange={(e) => updateBlockLocal(activeBlock.id, isB0102 ? 'data.ctaText' : 'data.actionButtonText', e.target.value)}
                       />
                     </div>
                   )}
@@ -342,15 +422,15 @@ export const PropertyInspector: React.FC = () => {
 
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Menu Links</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Menu Links</label>
                     <button
                       onClick={() => {
                         const newLinks = [...(overrides.data?.links || []), { id: crypto.randomUUID(), label: 'New Link', type: 'anchor', value: '' }];
                         updateBlockLocal(activeBlock.id, 'data.links', newLinks);
                       }}
-                      className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                      className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
                     >
-                      <Plus size={10} /> Add Link
+                      <Plus size={14} /> Add Link
                     </button>
                   </div>
 
@@ -387,7 +467,7 @@ export const PropertyInspector: React.FC = () => {
                           <div className="space-y-1">
                             <label className="text-[9px] uppercase opacity-40 italic">Label</label>
                             <input
-                              className="w-full bg-white border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
+                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
                               value={link.label}
                               onChange={(e) => {
                                 const newLinks = [...overrides.data.links];
@@ -399,7 +479,7 @@ export const PropertyInspector: React.FC = () => {
                           <div className="space-y-1">
                             <label className="text-[9px] uppercase opacity-40 italic">Type</label>
                             <select
-                              className="w-full bg-white border border-black/5 rounded p-1.5 text-[12px] outline-none"
+                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none"
                               value={link.type}
                               onChange={(e) => {
                                 const newLinks = [...overrides.data.links];
@@ -421,10 +501,10 @@ export const PropertyInspector: React.FC = () => {
                         />
 
                         <div className="space-y-1">
-                          <label className="text-[9px] uppercase opacity-40 italic">Target Value</label>
+                          <label className="text-xs uppercase opacity-40 italic">Target Value</label>
                           {link.type === 'anchor' ? (
                             <select
-                              className="w-full bg-white border border-black/5 rounded p-1.5 text-[12px] outline-none"
+                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-sm outline-none"
                               value={link.value}
                               onChange={(e) => {
                                 const newLinks = [...overrides.data.links];
@@ -439,7 +519,7 @@ export const PropertyInspector: React.FC = () => {
                             </select>
                           ) : (
                             <input
-                              className="w-full bg-white border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
+                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
                               placeholder="https://..."
                               value={link.value}
                               onChange={(e) => {
@@ -460,7 +540,7 @@ export const PropertyInspector: React.FC = () => {
             {isHero && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Main Content</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Main Content</label>
                   <input
                     className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
                     placeholder="Title"
@@ -492,7 +572,7 @@ export const PropertyInspector: React.FC = () => {
 
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Primary Button</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Primary Button</label>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'data.primaryBtnVisible', overrides.data?.primaryBtnVisible !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.primaryBtnVisible !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -501,7 +581,7 @@ export const PropertyInspector: React.FC = () => {
                     </button>
                   </div>
                   <input
-                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-2 text-[12px] outline-none"
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-2 text-sm outline-none"
                     placeholder="Button Text"
                     value={overrides.data?.primaryBtnText || ''}
                     onChange={(e) => updateBlockLocal(activeBlock.id, 'data.primaryBtnText', e.target.value)}
@@ -510,7 +590,7 @@ export const PropertyInspector: React.FC = () => {
 
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Secondary Button</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Secondary Button</label>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'data.secondaryBtnVisible', overrides.data?.secondaryBtnVisible !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.secondaryBtnVisible !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -528,7 +608,7 @@ export const PropertyInspector: React.FC = () => {
 
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Media Content</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Media Content</label>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'media.showImage', overrides.media?.showImage !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.media?.showImage !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -542,7 +622,7 @@ export const PropertyInspector: React.FC = () => {
                       <div className="space-y-2">
                         <label className="block w-full cursor-pointer">
                           <div className="w-full bg-black/[0.02] border border-dashed border-black/10 rounded-lg p-4 text-center hover:bg-black/[0.05] transition-all">
-                            <span className="text-[10px] opacity-40 uppercase font-bold">Upload Hero Photo</span>
+                            <span className="text-xs opacity-40 uppercase font-bold">Upload Hero Photo</span>
                             <input
                               type="file"
                               className="hidden"
@@ -575,7 +655,7 @@ export const PropertyInspector: React.FC = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold italic">Position</label>
+                        <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold italic">Position</label>
                         <div className="flex p-0.5 bg-black/5 rounded-lg">
                           {[
                             { id: 'left', label: 'Left' },
@@ -585,7 +665,7 @@ export const PropertyInspector: React.FC = () => {
                             <button
                               key={pos.id}
                               onClick={() => updateBlockLocal(activeBlock.id, 'media.imagePosition', pos.id)}
-                              className={`flex-1 py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.imagePosition === pos.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                              className={`flex-1 py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.imagePosition === pos.id ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                             >
                               {pos.label}
                             </button>
@@ -608,7 +688,7 @@ export const PropertyInspector: React.FC = () => {
 
                       {activeBlock.type === 'B0202' && (
                         <div className="space-y-2 pt-4 border-t border-black/5">
-                          <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Video URL Override</label>
+                          <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Video URL Override</label>
                           <input
                             className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-mono"
                             placeholder="https://..."
@@ -626,7 +706,7 @@ export const PropertyInspector: React.FC = () => {
             {isArticle && (
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Article Content</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Article Content</label>
                   <input
                     className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
                     placeholder="Article Title"
@@ -652,15 +732,15 @@ export const PropertyInspector: React.FC = () => {
             {isPortfolio && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Gallery Items</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Gallery Items</label>
                   <button
                     onClick={() => {
                       const newItems = [...(overrides.data?.items || []), { id: crypto.randomUUID(), type: 'image', url: '', title: 'New Project' }];
                       updateBlockLocal(activeBlock.id, 'data.items', newItems);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
                   >
-                    <Plus size={10} /> Add Item
+                    <Plus size={14} /> Add Item
                   </button>
                 </div>
 
@@ -676,11 +756,11 @@ export const PropertyInspector: React.FC = () => {
                           }}
                           className="p-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                       <input
-                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-sm outline-none focus:border-blue-500/30"
                         placeholder="Title"
                         value={item.title || ''}
                         onChange={(e) => {
@@ -690,7 +770,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                       />
                       <input
-                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 font-mono"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-sm outline-none focus:border-blue-500/30 font-mono"
                         placeholder="Media URL"
                         value={item.url || ''}
                         onChange={(e) => {
@@ -708,13 +788,13 @@ export const PropertyInspector: React.FC = () => {
             {isTimeline && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Milestones</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Milestones</label>
                   <button
                     onClick={() => {
                       const newItems = [...(overrides.data?.items || []), { date: '2024', title: 'New Event', desc: 'Detailed description.' }];
                       updateBlockLocal(activeBlock.id, 'data.items', newItems);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold"
                   >
                     Add Milestone
                   </button>
@@ -742,7 +822,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                       />
                       <input
-                        className="w-full bg-white border border-black/5 rounded-lg p-2 text-xs font-semibold outline-none"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded-lg p-2 text-sm font-semibold outline-none"
                         placeholder="Title"
                         value={item.title || ''}
                         onChange={(e) => {
@@ -752,7 +832,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                       />
                       <textarea
-                        className="w-full bg-white border border-black/5 rounded-lg p-2 text-xs outline-none h-16"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded-lg p-2 text-sm outline-none h-16"
                         placeholder="Description"
                         value={item.desc || ''}
                         onChange={(e) => {
@@ -770,13 +850,13 @@ export const PropertyInspector: React.FC = () => {
             {isStats && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Metrics</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Metrics</label>
                   <button
                     onClick={() => {
                       const newStats = [...(overrides.data?.stats || []), { value: '0', label: 'Metric' }];
                       updateBlockLocal(activeBlock.id, 'data.stats', newStats);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold"
                   >
                     Add Metric
                   </button>
@@ -787,19 +867,19 @@ export const PropertyInspector: React.FC = () => {
                       <div className="flex-1 space-y-2">
                         <Scrubber
                           label="Value"
-                          value={stat.value.replace(/[^0-9.-]/g, '') || '0'}
+                          value={String(stat.value ?? '').replace(/[^0-9.-]/g, '') || '0'}
                           min={0} max={1000000}
                           onChange={(val) => {
                             const newStats = [...overrides.data.stats];
                             // Try to preserve suffix if existed (like %)
-                            const original = stat.value;
+                            const original = String(stat.value ?? '');
                             const suffix = original.replace(/[0-9.-]/g, '');
                             newStats[idx] = { ...stat, value: val + suffix };
                             updateBlockLocal(activeBlock.id, 'data.stats', newStats);
                           }}
                         />
                         <input
-                          className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none"
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-sm outline-none"
                           placeholder="Label"
                           value={stat.label}
                           onChange={(e) => {
@@ -816,7 +896,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                         className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
@@ -834,9 +914,9 @@ export const PropertyInspector: React.FC = () => {
                     onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
                   />
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Tags (Comma Separated)</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Tags (Comma Separated)</label>
                     <textarea
-                      className="w-full bg-black/[0.03] border border-black/5 rounded-xl p-4 text-xs font-mono outline-none h-32"
+                      className="w-full bg-black/[0.03] border border-black/5 rounded-xl p-4 text-sm font-mono outline-none h-32"
                       placeholder="Tag1, Tag2, Tag3"
                       value={(overrides.data?.tags || []).join(', ')}
                       onChange={(e) => {
@@ -871,13 +951,13 @@ export const PropertyInspector: React.FC = () => {
             {isSocial && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Platforms</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Platforms</label>
                   <button
                     onClick={() => {
                       const newPlatforms = [...(overrides.data?.platforms || []), { type: 'twitter', url: 'https://' }];
                       updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold"
                   >
                     Add Platform
                   </button>
@@ -886,7 +966,7 @@ export const PropertyInspector: React.FC = () => {
                   {(overrides.data?.platforms || []).map((p: any, idx: number) => (
                     <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
                       <select
-                        className="w-full bg-white border border-black/5 rounded p-2 text-[10px] font-bold outline-none"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-[10px] font-bold outline-none"
                         value={p.type}
                         onChange={(e) => {
                           const newPlatforms = [...overrides.data.platforms];
@@ -901,7 +981,7 @@ export const PropertyInspector: React.FC = () => {
                         <option value="globe">Website</option>
                       </select>
                       <input
-                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none font-mono"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none font-mono"
                         value={p.url}
                         onChange={(e) => {
                           const newPlatforms = [...overrides.data.platforms];
@@ -916,7 +996,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                         className="absolute top-2 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
@@ -938,13 +1018,13 @@ export const PropertyInspector: React.FC = () => {
             {isTestimonials && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Client Reviews</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Client Reviews</label>
                   <button
                     onClick={() => {
                       const newItems = [...(overrides.data?.items || []), { quote: 'Experience modular perfection.', name: 'New Client', role: 'Executive' }];
                       updateBlockLocal(activeBlock.id, 'data.items', newItems);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold"
                   >
                     Add Review
                   </button>
@@ -953,7 +1033,7 @@ export const PropertyInspector: React.FC = () => {
                   {(overrides.data?.items || []).map((item: any, idx: number) => (
                     <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
                       <textarea
-                        className="w-full bg-white border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 italic"
+                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-sm outline-none focus:border-blue-500/30 italic"
                         value={item.quote}
                         placeholder="Quote"
                         onChange={(e) => {
@@ -964,7 +1044,7 @@ export const PropertyInspector: React.FC = () => {
                       />
                       <div className="flex gap-2">
                         <input
-                          className="w-1/2 bg-white border border-black/5 rounded p-2 text-[10px] font-bold outline-none"
+                          className="w-1/2 bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none"
                           value={item.name}
                           placeholder="Name"
                           onChange={(e) => {
@@ -974,7 +1054,7 @@ export const PropertyInspector: React.FC = () => {
                           }}
                         />
                         <input
-                          className="w-1/2 bg-white border border-black/5 rounded p-2 text-[10px] outline-none"
+                          className="w-1/2 bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none"
                           value={item.role}
                           placeholder="Role"
                           onChange={(e) => {
@@ -991,7 +1071,7 @@ export const PropertyInspector: React.FC = () => {
                         }}
                         className="absolute top-2 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
@@ -1013,7 +1093,7 @@ export const PropertyInspector: React.FC = () => {
             {isContactForm && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Header Title</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Header Title</label>
                   <input
                     className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none"
                     value={overrides.data?.title || ''}
@@ -1021,7 +1101,7 @@ export const PropertyInspector: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Subtitle</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Subtitle</label>
                   <input
                     className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none"
                     value={overrides.data?.subtitle || ''}
@@ -1034,13 +1114,13 @@ export const PropertyInspector: React.FC = () => {
             {isRadarChart && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Radar Data</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Radar Data</label>
                   <button
                     onClick={() => {
                       const newAxis = [...(overrides.data?.axis || []), { label: 'New Metric', value: 50 }];
                       updateBlockLocal(activeBlock.id, 'data.axis', newAxis);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold"
                   >
                     Add Axis
                   </button>
@@ -1050,7 +1130,7 @@ export const PropertyInspector: React.FC = () => {
                     <div key={idx} className="p-4 bg-black/[0.03] rounded-xl border border-black/5 space-y-4 relative group">
                       <div className="flex items-center justify-between">
                         <input
-                          className="bg-transparent border-b border-transparent hover:border-black/10 focus:border-blue-500/50 outline-none text-[10px] font-black uppercase tracking-widest flex-1"
+                          className="bg-transparent border-b border-transparent hover:border-black/10 focus:border-blue-500/50 outline-none text-xs font-black uppercase tracking-widest flex-1"
                           value={axis.label}
                           onChange={(e) => {
                             const newAxis = [...overrides.data.axis];
@@ -1065,7 +1145,7 @@ export const PropertyInspector: React.FC = () => {
                           }}
                           className="p-1 text-red-500 opacity-20 group-hover:opacity-100 transition-opacity"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                       <Scrubber
@@ -1087,15 +1167,15 @@ export const PropertyInspector: React.FC = () => {
             {isSkills && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Skill Groups</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Skill Groups</label>
                   <button
                     onClick={() => {
                       const newGroups = [...(overrides.data?.groups || []), { id: crypto.randomUUID(), title: 'New Group', items: [] }];
                       updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
                     }}
-                    className="p-1 px-2 bg-blue-500 text-white text-[9px] rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
                   >
-                    <Plus size={10} /> Add Group
+                    <Plus size={14} /> Add Group
                   </button>
                 </div>
 
@@ -1119,7 +1199,7 @@ export const PropertyInspector: React.FC = () => {
                           }}
                           className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
 
@@ -1127,7 +1207,7 @@ export const PropertyInspector: React.FC = () => {
                         {(group.items || []).map((item: any, iIdx: number) => (
                           <div key={iIdx} className="flex items-center gap-2 group/item">
                             <input
-                              className="flex-1 bg-white border border-black/5 rounded p-1.5 text-[12px]"
+                              className="flex-1 bg-white text-slate-900 border border-black/5 rounded p-1.5 text-sm"
                               value={item.name}
                               onChange={(e) => {
                                 const newGroups = [...overrides.data.groups];
@@ -1160,7 +1240,7 @@ export const PropertyInspector: React.FC = () => {
                               }}
                               className="p-1 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"
                             >
-                              <X size={10} />
+                              <X size={14} />
                             </button>
                           </div>
                         ))}
@@ -1171,7 +1251,7 @@ export const PropertyInspector: React.FC = () => {
                             newGroups[gIdx] = { ...group, items: newItems };
                             updateBlockLocal(activeBlock.id, 'data.groups', newGroups);
                           }}
-                          className="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-2 hover:underline"
+                          className="text-xs text-blue-500 font-bold uppercase tracking-widest mt-2 hover:underline"
                         >
                           + Add Item
                         </button>
@@ -1190,7 +1270,7 @@ export const PropertyInspector: React.FC = () => {
               <>
                 <Scrubber
                   label="Height (px)"
-                  value={overrides.layout?.height?.replace('px', '') || globalSettings['GL03'].params[5].value}
+                  value={String(overrides.layout?.height ?? '').replace('px', '') || globalSettings['GL03'].params[5].value}
                   min={40} max={200}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.height', val + 'px')}
                 />
@@ -1206,15 +1286,6 @@ export const PropertyInspector: React.FC = () => {
                   min={0} max={100}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
                 />
-                <div className="flex items-center justify-between py-4">
-                  <span className="text-[11px] font-medium opacity-50">Sticky Navigation</span>
-                  <button
-                    onClick={() => updateBlockLocal(activeBlock.id, 'layout.sticky', !overrides.layout?.sticky)}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${overrides.layout?.sticky !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.layout?.sticky !== false ? 'translate-x-5' : ''}`} />
-                  </button>
-                </div>
               </>
             )}
 
@@ -1222,13 +1293,13 @@ export const PropertyInspector: React.FC = () => {
               <div className="space-y-6">
                 <Scrubber
                   label="Section Height (vh)"
-                  value={overrides.layout?.height?.replace('vh', '') || '70'}
+                  value={String(overrides.layout?.height ?? '').replace('vh', '') || '70'}
                   min={30} max={100}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.height', val + 'vh')}
                 />
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Media Position</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Media Position</label>
                   <div className="flex p-0.5 bg-black/5 rounded-lg flex-wrap">
                     {[
                       { id: 'top', label: 'Top' },
@@ -1240,7 +1311,7 @@ export const PropertyInspector: React.FC = () => {
                       <button
                         key={pos.id}
                         onClick={() => updateBlockLocal(activeBlock.id, 'media.imagePosition', pos.id)}
-                        className={`flex-1 min-w-[30%] py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.imagePosition === pos.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                        className={`flex-1 min-w-[30%] py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.imagePosition === pos.id ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                       >
                         {pos.label}
                       </button>
@@ -1249,13 +1320,13 @@ export const PropertyInspector: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Alignment</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Alignment</label>
                   <div className="flex p-0.5 bg-black/5 rounded-lg">
                     {['left', 'center', 'right'].map(align => (
                       <button
                         key={align}
                         onClick={() => updateBlockLocal(activeBlock.id, 'layout.alignment', align)}
-                        className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.alignment === align ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                        className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.alignment === align ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                       >
                         {align}
                       </button>
@@ -1265,7 +1336,7 @@ export const PropertyInspector: React.FC = () => {
 
                 <Scrubber
                   label="Padding Top (px)"
-                  value={overrides.layout?.paddingTop?.replace('px', '') || '80'}
+                  value={String(overrides.layout?.paddingTop ?? '').replace('px', '') || '80'}
                   min={0} max={200}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingTop', val + 'px')}
                 />
@@ -1287,13 +1358,13 @@ export const PropertyInspector: React.FC = () => {
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.paddingY', val)}
                 />
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Text Alignment</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Text Alignment</label>
                   <div className="flex p-0.5 bg-black/5 rounded-lg">
                     {['left', 'center', 'right'].map(align => (
                       <button
                         key={align}
                         onClick={() => updateBlockLocal(activeBlock.id, 'layout.textAlign', align)}
-                        className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.textAlign === align ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                        className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.textAlign === align ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                       >
                         {align}
                       </button>
@@ -1318,7 +1389,7 @@ export const PropertyInspector: React.FC = () => {
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.gap', val)}
                 />
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
                   <div className="flex p-0.5 bg-black/5 rounded-lg">
                     {[
                       { id: 'aspect-square', label: '1:1' },
@@ -1329,7 +1400,7 @@ export const PropertyInspector: React.FC = () => {
                       <button
                         key={asp.id}
                         onClick={() => updateBlockLocal(activeBlock.id, 'layout.aspect', asp.id)}
-                        className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                        className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                       >
                         {asp.label}
                       </button>
@@ -1349,7 +1420,7 @@ export const PropertyInspector: React.FC = () => {
               <div className="space-y-6">
                 <Scrubber
                   label="Height (px)"
-                  value={overrides.layout?.height || (parseFloat(globalSettings['GL03'].params[0].value) * 4).toString()}
+                  value={overrides.layout?.height || '80'}
                   min={0} max={400}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'layout.height', val)}
                 />
@@ -1386,7 +1457,7 @@ export const PropertyInspector: React.FC = () => {
                 />
                 {isPreview && (
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Aspect Ratio</label>
                     <div className="flex p-0.5 bg-black/5 rounded-lg">
                       {[
                         { id: '16/9', label: '16:9' },
@@ -1395,7 +1466,7 @@ export const PropertyInspector: React.FC = () => {
                         <button
                           key={asp.id}
                           onClick={() => updateBlockLocal(activeBlock.id, 'layout.aspect', asp.id)}
-                          className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                          className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.layout?.aspect === asp.id ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                         >
                           {asp.label}
                         </button>
@@ -1411,44 +1482,86 @@ export const PropertyInspector: React.FC = () => {
         {activeTab === 'S' && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl border border-blue-500/10 bg-blue-500/5 mb-2">
-              <p className="text-[10px] opacity-60 leading-relaxed italic">
+              <p className="text-xs opacity-60 leading-relaxed italic">
                 Local styles override Global DNA standards.
               </p>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium opacity-50">Background</span>
-                <div className="relative">
-                  <input
-                    type="color"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    value={overrides.style?.background || globalSettings['GL02'].params[1].value}
-                    onChange={(e) => updateBlockLocal(activeBlock.id, 'style.background', e.target.value)}
-                  />
-                  <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.background || globalSettings['GL02'].params[1].value }} />
-                </div>
-              </div>
+              {(() => {
+                const blockStyle = overrides.style || {};
+                const siteTheme = globalSettings['GL10']?.params[6]?.value || 'Dark';
+                const isDark = siteTheme === 'Dark';
 
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium opacity-50">Text Color</span>
-                <div className="relative">
-                  <input
-                    type="color"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    value={isNavbar ? (overrides.textColor || globalSettings['GL02'].params[3].value) : (overrides.style?.color || globalSettings['GL02'].params[3].value)}
-                    onChange={(e) => updateBlockLocal(activeBlock.id, isNavbar ? 'textColor' : 'style.color', e.target.value)}
-                  />
-                  <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: isNavbar ? (overrides.textColor || globalSettings['GL02'].params[3].value) : (overrides.style?.color || globalSettings['GL02'].params[3].value) }} />
-                </div>
-              </div>
+                return (
+                  <>
+                    <ColorPicker
+                      label="Background"
+                      value={blockStyle.backgroundColor || (isDark ? 'rgba(30,30,30,1)' : 'rgba(255,255,255,1)')}
+                      defaultValue={isDark ? 'rgba(30,30,30,1)' : 'rgba(255,255,255,1)'}
+                      onChange={(val) => updateBlockLocal(activeBlock.id, 'style.backgroundColor', val)}
+                    />
+
+                    <ColorPicker
+                      label="Text Color"
+                      value={blockStyle.textColor || (isDark ? '#FFFFFF' : '#111827')}
+                      defaultValue={isDark ? '#FFFFFF' : '#111827'}
+                      onChange={(val) => updateBlockLocal(activeBlock.id, 'style.textColor', val)}
+                    />
+
+                    {isNavbar && (
+                      <div className="space-y-4 pt-4 border-t border-black/5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Glass Effect</span>
+                          <button
+                            onClick={() => updateBlockLocal(activeBlock.id, 'style.glassEffect', blockStyle.glassEffect !== false ? false : true)}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${blockStyle.glassEffect !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                          >
+                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${blockStyle.glassEffect !== false ? 'translate-x-4' : ''}`} />
+                          </button>
+                        </div>
+
+                        <Scrubber
+                          label="Roundness (px)"
+                          value={String(blockStyle.borderRadius ?? (isB0102 ? 50 : 0))}
+                          min={0} max={64}
+                          onChange={(val) => updateBlockLocal(activeBlock.id, 'style.borderRadius', parseInt(val))}
+                        />
+
+                        <Scrubber
+                          label="Height (px)"
+                          value={String(blockStyle.height ?? (isB0102 ? 64 : 80))}
+                          min={40} max={120}
+                          onChange={(val) => updateBlockLocal(activeBlock.id, 'style.height', parseInt(val))}
+                        />
+
+                        {/* DNA Inheritance */}
+                        <div className="pt-4 border-t border-black/5 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Inherit DNA</span>
+                            <button
+                              onClick={() => updateBlockLocal(activeBlock.id, 'style.button.useGlobalDNA', blockStyle.button?.useGlobalDNA !== false ? false : true)}
+                              className={`w-8 h-4 rounded-full transition-colors relative ${blockStyle.button?.useGlobalDNA !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                            >
+                              <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${blockStyle.button?.useGlobalDNA !== false ? 'translate-x-4' : ''}`} />
+                            </button>
+                          </div>
+                          <p className="text-[10px] opacity-40 leading-relaxed italic">
+                            Forces button scaling and padding to match system standards.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {isHero && (
                 <>
                   <div className="space-y-4 pt-4 border-t border-black/5">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Media Style (B0201)</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Media Style (B0201)</label>
                     <div className="space-y-2">
-                      <span className="text-[11px] font-medium opacity-50">Mask Shape</span>
+                      <span className="text-xs font-medium opacity-50">Mask Shape</span>
                       <div className="flex p-0.5 bg-black/5 rounded-lg">
                         {[
                           { id: 'square', label: 'Sq' },
@@ -1459,7 +1572,7 @@ export const PropertyInspector: React.FC = () => {
                           <button
                             key={shape.id}
                             onClick={() => updateBlockLocal(activeBlock.id, 'media.shape', shape.id)}
-                            className={`flex-1 py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.shape === shape.id ? 'bg-white shadow-sm opacity-100' : 'opacity-40'}`}
+                            className={`flex-1 py-1.5 text-[9px] uppercase font-bold tracking-widest rounded-md transition-all ${overrides.media?.shape === shape.id ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
                           >
                             {shape.label}
                           </button>
@@ -1469,7 +1582,7 @@ export const PropertyInspector: React.FC = () => {
 
                     <div className="space-y-4 pt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-medium opacity-50 uppercase tracking-widest">Active Levitation</span>
+                        <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Active Levitation</span>
                         <button
                           onClick={() => updateBlockLocal(activeBlock.id, 'media.levitation', !overrides.media?.levitation)}
                           className={`w-9 h-5 rounded-full transition-colors relative ${overrides.media?.levitation ? 'bg-indigo-500' : 'bg-gray-300'}`}
@@ -1481,7 +1594,7 @@ export const PropertyInspector: React.FC = () => {
                       {overrides.media?.levitation && (
                         <Scrubber
                           label="Float Speed (s)"
-                          value={overrides.media?.levitationSpeed || '3'}
+                          value={String(overrides.media?.levitationSpeed ?? '3')}
                           min={0.5} max={5}
                           onChange={(val) => updateBlockLocal(activeBlock.id, 'media.levitationSpeed', val)}
                         />
@@ -1489,7 +1602,7 @@ export const PropertyInspector: React.FC = () => {
 
                       <Scrubber
                         label="Image Scale (%)"
-                        value={overrides.media?.imageScale || 100}
+                        value={String(overrides.media?.imageScale ?? 100)}
                         min={20} max={150}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'media.imageScale', val)}
                       />
@@ -1499,37 +1612,27 @@ export const PropertyInspector: React.FC = () => {
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-black/5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium opacity-50">Title Color</span>
-                      <div className="relative">
-                        <input
-                          type="color"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          value={overrides.style?.titleColor || globalSettings['GL02'].params[3].value}
-                          onChange={(e) => updateBlockLocal(activeBlock.id, 'style.titleColor', e.target.value)}
-                        />
-                        <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.titleColor || globalSettings['GL02'].params[3].value }} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium opacity-50">Desc Color</span>
-                      <div className="relative">
-                        <input
-                          type="color"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          value={overrides.style?.descColor || globalSettings['GL02'].params[4].value}
-                          onChange={(e) => updateBlockLocal(activeBlock.id, 'style.descColor', e.target.value)}
-                        />
-                        <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.descColor || globalSettings['GL02'].params[4].value }} />
-                      </div>
+                    <div className="space-y-1 pt-4 border-t border-black/5">
+                      <ColorPicker
+                        label="Title Color"
+                        value={overrides.style?.titleColor}
+                        defaultValue={globalSettings['GL02'].params[3].value}
+                        onChange={(val) => updateBlockLocal(activeBlock.id, 'style.titleColor', val)}
+                      />
+                      <ColorPicker
+                        label="Desc Color"
+                        value={overrides.style?.descColor}
+                        defaultValue={globalSettings['GL02'].params[4].value}
+                        onChange={(val) => updateBlockLocal(activeBlock.id, 'style.descColor', val)}
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-black/5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Background Logic</label>
+                      <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Background Logic</label>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] opacity-40 uppercase">Lock BG</span>
+                        <span className="text-xs opacity-40 uppercase">Lock BG</span>
                         <button
                           onClick={() => updateBlockLocal(activeBlock.id, 'background.lockBackground', !overrides.background?.lockBackground)}
                           className={`w-9 h-5 rounded-full transition-colors relative ${overrides.background?.lockBackground ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1540,17 +1643,13 @@ export const PropertyInspector: React.FC = () => {
                     </div>
 
                     {overrides.background?.lockBackground && (
-                      <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
-                        <span className="text-[11px] font-medium opacity-50">Local BG Color</span>
-                        <div className="relative">
-                          <input
-                            type="color"
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                            value={overrides.background?.fixedColor || '#FFFFFF'}
-                            onChange={(e) => updateBlockLocal(activeBlock.id, 'background.fixedColor', e.target.value)}
-                          />
-                          <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.background?.fixedColor || '#FFFFFF' }} />
-                        </div>
+                      <div className="p-2 bg-black/[0.03] rounded-lg animate-in fade-in slide-in-from-top-1 duration-200">
+                        <ColorPicker
+                          label="Custom Color"
+                          value={overrides.background?.fixedColor}
+                          defaultValue="#FFFFFF"
+                          onChange={(val) => updateBlockLocal(activeBlock.id, 'background.fixedColor', val)}
+                        />
                       </div>
                     )}
                   </div>
@@ -1559,20 +1658,14 @@ export const PropertyInspector: React.FC = () => {
 
               {isSkills && (
                 <div className="space-y-4 pt-4 border-t border-black/5">
+                  <ColorPicker
+                    label="Accent Override"
+                    value={overrides.style?.accent}
+                    defaultValue={globalSettings['GL02'].params[2].value}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'style.accent', val)}
+                  />
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium opacity-50">Accent Override</span>
-                    <div className="relative">
-                      <input
-                        type="color"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        value={overrides.style?.accent || globalSettings['GL02'].params[2].value}
-                        onChange={(e) => updateBlockLocal(activeBlock.id, 'style.accent', e.target.value)}
-                      />
-                      <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.accent || globalSettings['GL02'].params[2].value }} />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium opacity-50">Use Global Radius</span>
+                    <span className="text-xs font-medium opacity-50">Use Global Radius</span>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'style.useGlobalRadius', !overrides.style?.useGlobalRadius)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.useGlobalRadius !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1585,14 +1678,14 @@ export const PropertyInspector: React.FC = () => {
 
               <Scrubber
                 label="Font Weight"
-                value={overrides.style?.fontWeight || globalSettings['GL01'].params[3].value}
+                value={String(overrides.style?.fontWeight ?? globalSettings['GL01'].params[3].value)}
                 min={100} max={900}
                 onChange={(val) => updateBlockLocal(activeBlock.id, 'style.fontWeight', Math.round(parseFloat(val)).toString())}
               />
 
               <Scrubber
                 label="Radius (px)"
-                value={overrides.style?.borderRadius?.replace('px', '') || globalSettings['GL07'].params[0].value}
+                value={String(overrides.style?.borderRadius ?? '').replace('px', '') || globalSettings['GL07'].params[0].value}
                 min={0} max={50}
                 onChange={(val) => updateBlockLocal(activeBlock.id, 'style.borderRadius', val + 'px')}
               />
@@ -1600,9 +1693,9 @@ export const PropertyInspector: React.FC = () => {
               {(isNavbar || isHero) && (
                 <div className="pt-4 border-t border-black/5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Button Style</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Button Style</label>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] opacity-40 uppercase">Use Global DNA</span>
+                      <span className="text-xs opacity-40 uppercase">Use Global DNA</span>
                       <button
                         onClick={() => updateBlockLocal(activeBlock.id, 'btnUseGlobal', overrides.btnUseGlobal !== false ? false : true)}
                         className={`w-9 h-5 rounded-full transition-colors relative ${overrides.btnUseGlobal !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1616,42 +1709,42 @@ export const PropertyInspector: React.FC = () => {
                     <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
                       <Scrubber
                         label="Btn Size Scale"
-                        value={overrides.btnStyles?.size || '1.0'}
+                        value={String(overrides.btnStyles?.size ?? '1.0')}
                         min={0.5} max={2.0}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.size', val)}
                       />
                       <Scrubber
                         label="Btn Pad X"
-                        value={overrides.btnStyles?.padX || '24'}
+                        value={String(overrides.btnStyles?.padX ?? '24')}
                         min={8} max={64}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.padX', val)}
                       />
                       <Scrubber
                         label="Btn Pad Y"
-                        value={overrides.btnStyles?.padY || '12'}
+                        value={String(overrides.btnStyles?.padY ?? '12')}
                         min={4} max={32}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.padY', val)}
                       />
                       <Scrubber
                         label="Btn Font Size"
-                        value={overrides.btnStyles?.font || '12'}
+                        value={String(overrides.btnStyles?.font ?? '12')}
                         min={8} max={24}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.font', val)}
                       />
                       <Scrubber
                         label="Btn Stroke"
-                        value={overrides.btnStyles?.stroke || '1'}
+                        value={String(overrides.btnStyles?.stroke ?? '1')}
                         min={0} max={4}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.stroke', val)}
                       />
                       <Scrubber
                         label="Btn Radius"
-                        value={overrides.btnStyles?.radius || '4'}
+                        value={String(overrides.btnStyles?.radius ?? '4')}
                         min={0} max={40}
                         onChange={(val) => updateBlockLocal(activeBlock.id, 'btnStyles.radius', val)}
                       />
                       <div className="flex items-center justify-between py-2">
-                        <span className="text-[11px] font-medium opacity-50">Btn Shadow</span>
+                        <span className="text-xs font-medium opacity-50">Btn Shadow</span>
                         <button
                           onClick={() => updateBlockLocal(activeBlock.id, 'btnStyles.shadow', overrides.btnStyles?.shadow === 'true' ? 'false' : 'true')}
                           className={`w-9 h-5 rounded-full transition-colors relative ${overrides.btnStyles?.shadow === 'true' ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1666,9 +1759,9 @@ export const PropertyInspector: React.FC = () => {
 
               {isArticle && (
                 <div className="space-y-4 pt-4 border-t border-black/5">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Typography (B0401)</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Typography (B0401)</label>
                   <div className="flex items-center justify-between py-2 border-b border-black/5">
-                    <span className="text-[11px] font-medium opacity-50">Use Global Font</span>
+                    <span className="text-xs font-medium opacity-50">Use Global Font</span>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'style.useGlobalFont', overrides.style?.useGlobalFont !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.useGlobalFont !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1679,7 +1772,7 @@ export const PropertyInspector: React.FC = () => {
 
                   {overrides.style?.useGlobalFont === false && (
                     <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Local Font Family</label>
+                      <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Local Font Family</label>
                       <select
                         className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-2 text-sm outline-none focus:border-blue-500/30"
                         value={overrides.style?.fontFamily || 'Space Grotesk'}
@@ -1694,14 +1787,14 @@ export const PropertyInspector: React.FC = () => {
 
                   <Scrubber
                     label="Font Size"
-                    value={overrides.style?.fontSize || '16'}
+                    value={String(overrides.style?.fontSize ?? '16')}
                     min={12} max={48}
                     onChange={(val) => updateBlockLocal(activeBlock.id, 'style.fontSize', val)}
                   />
 
                   <Scrubber
                     label="Line Height"
-                    value={overrides.style?.lineHeight || '1.6'}
+                    value={String(overrides.style?.lineHeight ?? '1.6')}
                     min={1.0} max={2.5}
                     onChange={(val) => updateBlockLocal(activeBlock.id, 'style.lineHeight', val)}
                   />
@@ -1710,10 +1803,10 @@ export const PropertyInspector: React.FC = () => {
 
               {isPortfolio && (
                 <div className="space-y-4 pt-4 border-t border-black/5">
-                  <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Visual Style (B0501)</label>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Visual Style (B0501)</label>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium opacity-50">Show Captions</span>
+                    <span className="text-xs font-medium opacity-50">Show Captions</span>
                     <button
                       onClick={() => updateBlockLocal(activeBlock.id, 'style.showCaptions', overrides.style?.showCaptions !== false ? false : true)}
                       className={`w-9 h-5 rounded-full transition-colors relative ${overrides.style?.showCaptions !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
@@ -1724,23 +1817,17 @@ export const PropertyInspector: React.FC = () => {
 
                   <Scrubber
                     label="Hover Scale"
-                    value={overrides.style?.hoverScale || '1.05'}
+                    value={String(overrides.style?.hoverScale ?? '1.05')}
                     min={1.0} max={1.2}
                     onChange={(val) => updateBlockLocal(activeBlock.id, 'style.hoverScale', val)}
                   />
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium opacity-50">Background Fill</span>
-                    <div className="relative">
-                      <input
-                        type="color"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        value={overrides.style?.bgFill || '#FFFFFF'}
-                        onChange={(e) => updateBlockLocal(activeBlock.id, 'style.bgFill', e.target.value)}
-                      />
-                      <div className="w-6 h-6 rounded-full border border-black/10" style={{ backgroundColor: overrides.style?.bgFill || '#FFFFFF' }} />
-                    </div>
-                  </div>
+                  <ColorPicker
+                    label="Background Fill"
+                    value={overrides.style?.bgFill}
+                    defaultValue="#FFFFFF"
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'style.bgFill', val)}
+                  />
                 </div>
               )}
             </div>
@@ -1751,31 +1838,31 @@ export const PropertyInspector: React.FC = () => {
           <div className="space-y-2">
             <Scrubber
               label="Glass Blur"
-              value={overrides.effects?.blur?.replace('px', '') || '20'}
+              value={String(overrides.effects?.blur ?? '').replace('px', '') || '20'}
               min={0} max={100}
               onChange={(val) => updateBlockLocal(activeBlock.id, 'effects.blur', val + 'px')}
             />
             <Scrubber
               label="Shadow Intensity"
-              value={overrides.effects?.shadowAlpha || '0.05'}
+              value={String(overrides.effects?.shadowAlpha ?? '0.05')}
               min={0} max={1}
               onChange={(val) => updateBlockLocal(activeBlock.id, 'effects.shadowAlpha', val)}
             />
 
             {isVariant03 && (
               <div className="space-y-4 pt-4 border-t border-black/5 mt-4">
-                <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold flex items-center gap-2">
-                  <Zap size={10} /> Physics Engine
+                <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold flex items-center gap-2">
+                  <Zap size={14} /> Physics Engine
                 </label>
                 <Scrubber
                   label="Field Strength"
-                  value={overrides.physics?.strength || '0.5'}
+                  value={String(overrides.physics?.strength ?? '0.5')}
                   min={0.1} max={2.0}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.strength', val)}
                 />
                 <Scrubber
                   label="System Friction"
-                  value={overrides.physics?.friction || '0.1'}
+                  value={String(overrides.physics?.friction ?? '0.1')}
                   min={0.01} max={1.0}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.friction', val)}
                 />
@@ -1785,10 +1872,10 @@ export const PropertyInspector: React.FC = () => {
             {(activeBlock.type === 'Hero' || activeBlock.type === 'B0201' || isSkills) && (
               <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-[11px] font-medium opacity-50 uppercase tracking-widest">Custom Animation</span>
+                  <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Custom Animation</span>
                   <button
                     onClick={() => updateBlockLocal(activeBlock.id, 'animation.useGlobal', overrides.animation?.useGlobal === false)}
-                    className={`text-[10px] px-3 py-1 rounded-full border transition-all ${overrides.animation?.useGlobal === false ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 opacity-40'}`}
+                    className={`text-xs px-3 py-1 rounded-full border transition-all ${overrides.animation?.useGlobal === false ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 opacity-40'}`}
                   >
                     {overrides.animation?.useGlobal === false ? 'ON' : 'OFF'}
                   </button>
@@ -1798,19 +1885,19 @@ export const PropertyInspector: React.FC = () => {
                   <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Scrubber
                       label="Duration (s)"
-                      value={overrides.animation?.duration || '0.6'}
+                      value={String(overrides.animation?.duration ?? '0.6')}
                       min={0.1} max={2.0}
                       onChange={(val) => updateBlockLocal(activeBlock.id, 'animation.duration', val)}
                     />
                     <Scrubber
                       label="Stagger (s)"
-                      value={overrides.animation?.stagger || '0.1'}
+                      value={String(overrides.animation?.stagger ?? '0.1')}
                       min={0} max={0.5}
                       onChange={(val) => updateBlockLocal(activeBlock.id, 'animation.stagger', val)}
                     />
                     <Scrubber
                       label="Entrance Y (px)"
-                      value={overrides.animation?.entranceY || '20'}
+                      value={String(overrides.animation?.entranceY ?? '20')}
                       min={0} max={100}
                       onChange={(val) => updateBlockLocal(activeBlock.id, 'animation.entranceY', val)}
                     />
@@ -1823,19 +1910,19 @@ export const PropertyInspector: React.FC = () => {
             {(activeBlock.type === 'Navbar' || activeBlock.type === 'B0101') && (
               <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-[11px] font-medium opacity-50 uppercase tracking-widest">Sticky Animation</span>
+                  <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Sticky Animation</span>
                   <button
                     onClick={() => updateBlockLocal(activeBlock.id, 'animation.stickyAnimation', overrides.animation?.stickyAnimation !== true)}
-                    className={`text-[10px] px-3 py-1 rounded-full border transition-all ${overrides.animation?.stickyAnimation !== false ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 opacity-40'}`}
+                    className={`text-xs px-3 py-1 rounded-full border transition-all ${overrides.animation?.stickyAnimation !== false ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 opacity-40'}`}
                   >
                     {overrides.animation?.stickyAnimation !== false ? 'ON' : 'OFF'}
                   </button>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-[11px] font-medium opacity-50 uppercase tracking-widest">Entrance Type</span>
+                  <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Entrance Type</span>
                   <select
-                    className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-lg p-2 text-[12px] outline-none"
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-lg p-2 text-sm outline-none"
                     value={overrides.animation?.entranceType || 'slide-down'}
                     onChange={(e) => updateBlockLocal(activeBlock.id, 'animation.entranceType', e.target.value)}
                   >
@@ -1848,9 +1935,9 @@ export const PropertyInspector: React.FC = () => {
             )}
 
             <div className="py-4 space-y-2">
-              <span className="text-[11px] font-medium opacity-50">Entrance Preset</span>
+              <span className="text-xs font-medium opacity-50">Entrance Preset</span>
               <select
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-lg p-2 text-[12px] outline-none"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-lg p-2 text-sm outline-none"
                 value={overrides.effects?.animation || 'fade-in'}
                 onChange={(e) => updateBlockLocal(activeBlock.id, 'effects.animation', e.target.value)}
               >
@@ -1863,16 +1950,16 @@ export const PropertyInspector: React.FC = () => {
 
             {isVariant03 && (
               <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
-                <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-bold">Physics Logic (Variant 03)</label>
+                <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Physics Logic (Variant 03)</label>
                 <Scrubber
                   label="Physics Strength"
-                  value={overrides.physics?.strength || '0.5'}
+                  value={String(overrides.physics?.strength ?? '0.5')}
                   min={0} max={1}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.strength', val)}
                 />
                 <Scrubber
                   label="Physics Friction"
-                  value={overrides.physics?.friction || '0.1'}
+                  value={String(overrides.physics?.friction ?? '0.1')}
                   min={0} max={0.5}
                   onChange={(val) => updateBlockLocal(activeBlock.id, 'physics.friction', val)}
                 />
@@ -1883,11 +1970,114 @@ export const PropertyInspector: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t border-gray-100 opacity-25 text-[10px] font-mono tracking-widest flex justify-between">
+      <div className="p-6 border-t border-gray-100 opacity-25 text-xs font-mono tracking-widest flex justify-between">
         <span>SYNC_ID: {activeBlock.id.slice(0, 8)}</span>
         <span>LOCAL_DNA_v1.1</span>
       </div>
     </aside>
+  );
+};
+
+// --- Theme Settings Panel ---
+
+const ThemeSettingsPanel: React.FC = () => {
+  const { uiTheme, applyThemePreset, updateUITheme, toggleThemePanel } = useStore();
+
+  return (
+    <div
+      className="w-[320px] h-full border-l animate-[slideInRight_0.3s_ease-out] transition-colors duration-500 relative flex flex-col overflow-hidden theme-settings-panel"
+      style={{
+        backgroundColor: uiTheme.lightPanel,
+        borderColor: uiTheme.elements,
+        color: uiTheme.fonts,
+        borderLeftWidth: 'var(--ui-stroke-width)'
+      }}
+    >
+      <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements, borderBottomWidth: 'var(--ui-stroke-width)' }}>
+        <h2 className="text-xs font-bold uppercase tracking-[0.2em] opacity-40 italic">System Theme</h2>
+        <button onClick={toggleThemePanel} className="p-2 opacity-20 hover:opacity-100 transition-opacity">
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
+        {/* Presets */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Interface Presets</label>
+          <div className="grid grid-cols-1 gap-2">
+            {Object.keys(UI_THEME_PRESETS).map(name => (
+              <button
+                key={name}
+                onClick={() => applyThemePreset(name)}
+                className="w-full p-4 border rounded-xl flex items-center justify-between group transition-all hover:bg-black/[0.03]"
+                style={{ borderColor: uiTheme.elements, borderWidth: 'var(--ui-stroke-width)' }}
+              >
+                <span className="text-xs font-bold uppercase tracking-widest">{name}</span>
+                <div className="flex gap-1">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: (UI_THEME_PRESETS as any)[name].lightPanel }} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: (UI_THEME_PRESETS as any)[name].accents }} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Colors */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Custom Colors</label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between py-2 border-b border-black/5">
+              <span className="text-xs font-medium opacity-60">Accent Color</span>
+              <input 
+                type="color" 
+                value={uiTheme.accents} 
+                onChange={(e) => updateUITheme('accents', e.target.value)}
+                className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
+              />
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-black/5">
+              <span className="text-xs font-medium opacity-60">Panel Color</span>
+              <input 
+                type="color" 
+                value={uiTheme.lightPanel} 
+                onChange={(e) => updateUITheme('lightPanel', e.target.value)}
+                className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
+              />
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs font-medium opacity-60">Text Color</span>
+              <input 
+                type="color" 
+                value={uiTheme.fonts} 
+                onChange={(e) => updateUITheme('fonts', e.target.value)}
+                className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Interface Scale */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30">Interface Scale</label>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono opacity-40">SCALE_VAL</span>
+              <span className="text-xs font-bold">{uiTheme.interfaceScale}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="80" 
+              max="130" 
+              step="5"
+              value={uiTheme.interfaceScale}
+              onChange={(e) => updateUITheme('interfaceScale', parseInt(e.target.value))}
+              className="w-full h-1 bg-black/10 rounded-full appearance-none cursor-pointer"
+              style={{ accentColor: uiTheme.accents }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1896,64 +2086,157 @@ export const PropertyInspector: React.FC = () => {
 export const RightSidebar: React.FC = () => {
   const {
     uiTheme,
-    updateUITheme,
-    applyThemePreset,
     isPreviewMode,
     togglePreviewMode,
     isDataPanelOpen,
     toggleDataPanel,
+    isThemePanelOpen,
+    toggleThemePanel,
     refreshCanvas,
     serializeState,
     triggerIOFeedback,
-    ioFeedback
+    ioFeedback,
+    undo, redo, past, future,
+    viewportMode, setViewport,
+    gridMode, cycleGrid,
+    loadSnapshot
   } = useStore();
 
+  // Integrated Keyboard listeners moved from old Toolbar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if (e.key === 'y') {
+                e.preventDefault();
+                redo();
+            }
+        }
+        if (e.key === '6' && e.ctrlKey && e.shiftKey) {
+            loadSnapshot('GOLDEN_STABLE_666');
+            triggerIOFeedback();
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, loadSnapshot, triggerIOFeedback]);
+
+  const isMobile = viewportMode === 'mobile';
+  const btnBase = "p-3 transition-all duration-300 rounded-lg hover:brightness-95 flex items-center justify-center";
+  const activeIconStyle = { color: uiTheme.accents, backgroundColor: `${uiTheme.accents}15` };
 
   return (
-    <aside
-      className="w-[60px] h-full border-l z-50 flex flex-col items-center py-6 transition-colors duration-500 relative right-sidebar"
-      style={{
-        backgroundColor: uiTheme.lightPanel,
-        borderColor: uiTheme.elements,
-        color: uiTheme.fonts,
-        borderLeftWidth: 'var(--ui-stroke-width)'
-      }}
-    >
-      <div className="flex flex-col items-center gap-2">
-        {/* Toggle Preview Mode */}
-        <button
-          onClick={togglePreviewMode}
-          className="p-3 mb-2 transition-all duration-300 rounded-lg hover:brightness-95"
-          style={{
-            color: isPreviewMode ? uiTheme.accents : uiTheme.elements,
-            backgroundColor: isPreviewMode ? `${uiTheme.accents}15` : 'transparent'
-          }}
-          title="Toggle Preview Mode"
-        >
-          <Eye size={22} strokeWidth={1.5} />
-        </button>
+    <>
+      <aside
+        className="w-[60px] h-full border-l z-50 flex flex-col items-center py-6 transition-colors duration-500 relative right-sidebar"
+        style={{
+          backgroundColor: uiTheme.lightPanel,
+          borderColor: uiTheme.elements,
+          color: uiTheme.fonts,
+          borderLeftWidth: 'var(--ui-stroke-width)'
+        }}
+      >
+        <div className="flex flex-col items-center gap-2 w-full px-2">
+          {/* Undo/Redo Group */}
+          <button
+            onClick={undo}
+            disabled={past.length === 0}
+            className={`${btnBase} ${past.length === 0 ? 'opacity-20 pointer-events-none' : 'hover:bg-black/5'}`}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 size={20} strokeWidth={2} />
+          </button>
+          <button
+            onClick={redo}
+            disabled={future.length === 0}
+            className={`${btnBase} ${future.length === 0 ? 'opacity-20 pointer-events-none' : 'hover:bg-black/5'}`}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 size={20} strokeWidth={2} />
+          </button>
 
+          <div className="w-8 h-[1px] bg-current opacity-10 my-2" />
 
-        <button
-          onClick={() => {
-            toggleDataPanel();
-            if (!isDataPanelOpen) { serializeState(); triggerIOFeedback(); }
-          }}
-          className={`p-3 mb-4 transition-all duration-300 relative group flex items-center justify-center ${ioFeedback ? 'opacity-30' : 'opacity-100'} hover:brightness-95 rounded-lg`}
-          style={{ color: isDataPanelOpen ? uiTheme.accents : uiTheme.elements }}
-        >
-          <ArrowLeftRight size={24} strokeWidth={1.5} />
-          {isDataPanelOpen && <div className="absolute right-0 w-[2px] h-6" style={{ backgroundColor: uiTheme.accents }} />}
-        </button>
+          {/* Viewport Toggles */}
+          <button
+            onClick={() => setViewport('desktop')}
+            className={btnBase}
+            style={!isMobile ? activeIconStyle : {}}
+            title="Desktop View"
+          >
+            <Monitor size={20} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => setViewport('mobile')}
+            className={btnBase}
+            style={isMobile ? activeIconStyle : {}}
+            title="Mobile View"
+          >
+            <Smartphone size={20} strokeWidth={2} />
+          </button>
 
-        <button
-          onClick={refreshCanvas}
-          className="p-3 mt-4 transition-all hover:rotate-180 duration-700 hover:brightness-95 rounded-lg"
-          style={{ color: uiTheme.elements }}
-        >
-          <RefreshCcw size={24} strokeWidth={1.5} />
-        </button>
-      </div>
-    </aside>
+          <div className="w-8 h-[1px] bg-current opacity-10 my-2" />
+
+          {/* Grid Toggle */}
+          <button
+            onClick={cycleGrid}
+            className={btnBase}
+            style={gridMode !== 'off' ? activeIconStyle : {}}
+            title="Toggle Grid (G)"
+          >
+            <Grid3X3 size={20} strokeWidth={2} />
+          </button>
+
+          <div className="w-8 h-[1px] bg-current opacity-10 my-2" />
+
+          {/* Settings / UI Theme Toggle */}
+          <button
+            onClick={toggleThemePanel}
+            className={btnBase}
+            style={isThemePanelOpen ? activeIconStyle : {}}
+            title="Interface Settings"
+          >
+            <Settings size={22} strokeWidth={1.5} className={isThemePanelOpen ? 'rotate-90 duration-500' : 'duration-500'} />
+          </button>
+
+          {/* Visibility / Preview Toggle */}
+          <button
+            onClick={togglePreviewMode}
+            className={btnBase}
+            style={isPreviewMode ? activeIconStyle : {}}
+            title="Toggle Preview Mode"
+          >
+            <Eye size={22} strokeWidth={1.5} />
+          </button>
+
+          <button
+            onClick={() => {
+              toggleDataPanel();
+              if (!isDataPanelOpen) { serializeState(); triggerIOFeedback(); }
+            }}
+            className={`${btnBase} relative group ${ioFeedback ? 'opacity-30' : 'opacity-100'}`}
+            style={isDataPanelOpen ? activeIconStyle : {}}
+            title="Production Output"
+          >
+            <ArrowLeftRight size={22} strokeWidth={1.5} />
+            {isDataPanelOpen && <div className="absolute right-[-4px] w-[2px] h-6 rounded-l-full" style={{ backgroundColor: uiTheme.accents }} />}
+          </button>
+
+          <button
+            onClick={refreshCanvas}
+            className={`${btnBase} hover:rotate-180 duration-700`}
+            title="Refresh Canvas"
+          >
+            <RefreshCcw size={22} strokeWidth={1.5} />
+          </button>
+        </div>
+      </aside>
+      
+      {/* Dynamic Overlay Panels */}
+      {!isPreviewMode && isThemePanelOpen && <ThemeSettingsPanel />}
+    </>
   );
 };

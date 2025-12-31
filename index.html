@@ -15,6 +15,7 @@
         extend: {
           colors: {
             accent: 'var(--ui-accent)',
+            primary: 'var(--ui-accent)',
           }
         }
       }
@@ -40,6 +41,37 @@
     /* Precise borders for monochrome design */
     .border-ui {
       border-width: var(--ui-stroke-width, 1px);
+    }
+
+    /* Patterns */
+    .dna-pattern {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: var(--dna-pattern-opacity, 0.1);
+      background-size: var(--dna-pattern-size, 20px) var(--dna-pattern-size, 20px);
+    }
+
+    .pattern-dots {
+      background-image: radial-gradient(var(--dna-pattern-color, #000) 1px, transparent 1px);
+    }
+
+    .pattern-checkered {
+      background-image:
+        linear-gradient(to right, var(--dna-pattern-color, #000) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--dna-pattern-color, #000) 1px, transparent 1px);
+    }
+
+    .pattern-grid {
+      background-image:
+        linear-gradient(var(--dna-pattern-color, #000) 1px, transparent 1px),
+        linear-gradient(90deg, var(--dna-pattern-color, #000) 1px, transparent 1px);
+    }
+
+    .pattern-noise {
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC42NSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0IHN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNuKSIgb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
+      background-size: 200px 200px;
     }
 
     /* Custom minimalist scrollbar */
@@ -69,17 +101,18 @@
     "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "url": "https://esm.sh/url@^0.11.4",
-    "framer-motion": "https://esm.sh/framer-motion@^12.23.26"
+    "framer-motion": "https://esm.sh/framer-motion@^12.23.26",
+    "framer-motion/": "https://esm.sh/framer-motion@^12.23.26/"
   }
 }
 </script>
-
 
 
 </head>
 
 <body>
   <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
 </body>
 
 </html>

@@ -25,7 +25,7 @@ export const Sidebar: React.FC = () => {
     } = useStore();
 
     const getBlockIcon = (type: string) => {
-        const props = { size: 18, strokeWidth: 1.5 };
+        const props = { size: 20, strokeWidth: 1.5 };
 
         switch (type) {
             case 'B0101':
@@ -90,21 +90,37 @@ export const Sidebar: React.FC = () => {
                 {/* Master Logo Button */}
                 <button
                     onClick={toggleGlobal}
-                    className="p-1.5 transition-all duration-300 relative group flex items-center justify-center"
-                    style={{ color: isGlobalOpen ? uiTheme.accents : uiTheme.elements }}
+                    className="p-1.5 transition-all duration-300 relative group flex items-center justify-center rounded-lg"
+                    style={{
+                        color: isGlobalOpen ? uiTheme.accents : `${uiTheme.fonts}40`,
+                        backgroundColor: isGlobalOpen ? `${uiTheme.accents}10` : 'transparent'
+                    }}
                 >
-                    <CircleDot size={26} strokeWidth={1.5} />
-                    {isGlobalOpen && <div className="absolute left-0 w-[2px] h-6" style={{ backgroundColor: uiTheme.accents }} />}
+                    <CircleDot size={28} strokeWidth={1.5} />
+                    {isGlobalOpen && (
+                        <div
+                            className="absolute left-[-11px] w-[3px] h-6 rounded-r-full shadow-sm"
+                            style={{ backgroundColor: uiTheme.accents }}
+                        />
+                    )}
                 </button>
 
                 {/* Add Registry Button */}
                 <button
                     onClick={toggleBlockList}
-                    className="p-1.5 transition-all duration-300 relative group flex items-center justify-center"
-                    style={{ color: isBlockListOpen ? uiTheme.accents : uiTheme.elements }}
+                    className="p-1.5 transition-all duration-300 relative group flex items-center justify-center rounded-lg"
+                    style={{
+                        color: isBlockListOpen ? uiTheme.accents : `${uiTheme.fonts}40`,
+                        backgroundColor: isBlockListOpen ? `${uiTheme.accents}10` : 'transparent'
+                    }}
                 >
-                    <Plus size={30} strokeWidth={1} />
-                    {isBlockListOpen && <div className="absolute left-0 w-[2px] h-6" style={{ backgroundColor: uiTheme.accents }} />}
+                    <Plus size={32} strokeWidth={1} />
+                    {isBlockListOpen && (
+                        <div
+                            className="absolute left-[-11px] w-[3px] h-6 rounded-r-full shadow-sm"
+                            style={{ backgroundColor: uiTheme.accents }}
+                        />
+                    )}
                 </button>
 
                 {/* Manage Architecture Button */}
@@ -112,12 +128,17 @@ export const Sidebar: React.FC = () => {
                     onClick={toggleManager}
                     className={`p-3 transition-all duration-300 relative group flex items-center justify-center rounded-xl ${isManagerOpen ? 'shadow-sm' : 'hover:bg-black/5'}`}
                     style={{
-                        color: isManagerOpen ? uiTheme.accents : uiTheme.elements,
-                        backgroundColor: isManagerOpen ? `${uiTheme.accents}15` : undefined
+                        color: isManagerOpen ? uiTheme.accents : `${uiTheme.fonts}40`,
+                        backgroundColor: isManagerOpen ? `${uiTheme.accents}10` : 'transparent'
                     }}
                 >
-                    <Minus size={22} strokeWidth={2.5} />
-                    {isManagerOpen && <div className="absolute left-0 w-[2px] h-6" style={{ backgroundColor: uiTheme.accents }} />}
+                    <Minus size={24} strokeWidth={2.5} />
+                    {isManagerOpen && (
+                        <div
+                            className="absolute left-[-11px] w-[3px] h-6 rounded-r-full shadow-sm"
+                            style={{ backgroundColor: uiTheme.accents }}
+                        />
+                    )}
                 </button>
 
                 <div className="w-8 h-[1px] opacity-30 my-2" style={{ backgroundColor: uiTheme.elements }} />
@@ -130,29 +151,15 @@ export const Sidebar: React.FC = () => {
                                 onClick={() => setSelectedBlock(selectedBlockId === block.id ? null : block.id)}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 hover:brightness-95 overflow-visible"
                                 style={{
-                                    color: selectedBlockId === block.id ? uiTheme.accents : uiTheme.fonts,
-                                    opacity: selectedBlockId === block.id ? 1 : 0.4,
-                                    backgroundColor: selectedBlockId === block.id ? `${uiTheme.accents}15` : 'transparent'
+                                    color: selectedBlockId === block.id ? uiTheme.accents : `${uiTheme.fonts}40`,
+                                    backgroundColor: selectedBlockId === block.id ? `${uiTheme.accents}10` : 'transparent'
                                 }}
                                 title={block.type}
                             >
                                 {getBlockIcon(block.type)}
                             </button>
 
-                            {/* Quick Visibility Toggle (Top Right) */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleBlockVisibility(block.id);
-                                }}
-                                className="absolute -right-1 -top-1 p-0.5 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10 border"
-                                style={{
-                                    backgroundColor: uiTheme.lightPanel,
-                                    borderColor: uiTheme.elements
-                                }}
-                            >
-                                {block.isVisible ? <Eye size={10} /> : <EyeOff size={10} className="text-red-500" />}
-                            </button>
+
 
                             {/* Architectural Controls Panel (Floating on Hover) */}
                             <div
@@ -168,27 +175,27 @@ export const Sidebar: React.FC = () => {
                                     onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }}
                                     className="p-1.5 hover:bg-black/5 rounded disabled:opacity-20 transition-colors"
                                 >
-                                    <ArrowUp size={12} />
+                                    <ArrowUp size={16} />
                                 </button>
                                 <button
                                     disabled={index === contentBlocks.length - 1}
                                     onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }}
                                     className="p-1.5 hover:bg-black/5 rounded disabled:opacity-20 transition-colors"
                                 >
-                                    <ArrowDown size={12} />
+                                    <ArrowDown size={16} />
                                 </button>
                                 <div className="w-full h-[1px] my-1 opacity-10" style={{ backgroundColor: uiTheme.fonts }} />
                                 <button
                                     onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}
                                     className="p-1.5 hover:bg-red-500 hover:text-white rounded transition-colors group/trash"
                                 >
-                                    <Trash2 size={12} className="group-hover/trash:scale-110 transition-transform" />
+                                    <Trash2 size={16} className="group-hover/trash:scale-110 transition-transform" />
                                 </button>
                             </div>
 
                             {selectedBlockId === block.id && (
                                 <div
-                                    className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full shadow-sm"
+                                    className="absolute left-[-11px] top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full shadow-sm"
                                     style={{ backgroundColor: uiTheme.accents }}
                                 />
                             )}

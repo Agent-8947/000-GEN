@@ -113,8 +113,15 @@ export default function App() {
     root.style.setProperty('--dna-text-sec', gl02[4].value);
     root.style.setProperty('--dna-border', gl02[5].value);
 
-    // GL11: Site Engine (Theme Trigger)
-    const siteTheme = globalSettings['GL11'].params[0].value;
+    // GL02: Pattern Sync
+    const patternOpacity = (parseFloat(gl02[8]?.value || '10') / 100).toString();
+    const patternSize = `${gl02[9]?.value || '20'}px`;
+    root.style.setProperty('--dna-pattern-opacity', patternOpacity);
+    root.style.setProperty('--dna-pattern-size', patternSize);
+    root.style.setProperty('--dna-pattern-color', gl02[3].value); // Base on Text Prim
+
+    // GL10: Site Engine (Theme Trigger)
+    const siteTheme = globalSettings['GL10']?.params[6]?.value || 'Dark';
     root.setAttribute('data-theme', siteTheme.toLowerCase());
 
     // Global Radius Multiplier (GL07)

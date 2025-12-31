@@ -10,12 +10,12 @@ interface NavbarProps {
     localOverrides: any;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ id, localOverrides: overrides }) => {
-    const { globalSettings, viewportMode, toggleSiteTheme } = useStore();
+export const Navbar: React.FC<NavbarProps> = ({ id, type, localOverrides: overrides }) => {
+    const { globalSettings, viewportMode, toggleSiteTheme, updateBlockLocal } = useStore();
     const isMobileMode = viewportMode === 'mobile';
 
-    // Site Theme Logic (GL11)
-    const siteTheme = globalSettings['GL11']?.params[0]?.value || 'Light';
+    // Site Theme Logic (GL10 - P7)
+    const siteTheme = globalSettings['GL10']?.params[6]?.value || 'Dark';
     const isDark = siteTheme === 'Dark';
 
     // DNA Binding Engine
@@ -24,9 +24,11 @@ export const Navbar: React.FC<NavbarProps> = ({ id, localOverrides: overrides })
     const gl03 = globalSettings['GL03'].params; // Spacing
     const gl04 = globalSettings['GL04'].params; // Buttons
     const gl07 = globalSettings['GL07'].params; // Radius
-    const gl08 = globalSettings['GL08'].params; // Icons
     const gl09 = globalSettings['GL09'].params; // Animation
     const gl06 = globalSettings['GL06'].params; // Effects
+
+    // Robust check for B0102 type
+    const isB0102 = type === 'B0102';
 
     const safeData = overrides.data || {
         logo: '000-GEN',
@@ -93,146 +95,288 @@ export const Navbar: React.FC<NavbarProps> = ({ id, localOverrides: overrides })
         WebkitFontSmoothing: gl01[6]?.value === 'true' ? 'antialiased' : 'auto'
     });
 
-    const textColor = overrides.textColor || gl02[3]?.value || '#111827';
     const glassBlur = parseFloat(gl06[2]?.value || '0');
     const glassOpacity = parseFloat(gl06[3]?.value || '100') / 100;
 
-    const isFloating = overrides.layout?.variant === 'floating';
+    // Forced Normalization & Refurbishment Logic (HARD LIMITS)
+    const blockStyle = overrides.style || {};
+    const isSticky = globalSettings['GL11']?.params[0]?.value === 'true';
+    const showGlass = blockStyle.glassEffect !== false;
 
-    const navStyle = {
-        height: overrides.layout?.height || '80px',
-        background: glassBlur > 0
-            ? `rgba(255,255,255,${glassOpacity})`
-            : (overrides.style?.background || (isDark ? '#1A1A1A' : '#FFFFFF')),
-        backdropFilter: glassBlur > 0 ? `blur(${glassBlur}px)` : 'none',
-        paddingLeft: (overrides.layout?.paddingX || gl03[2]?.value || '40') + 'px',
-        paddingRight: (overrides.layout?.paddingX || gl03[2]?.value || '40') + 'px',
-        borderBottom: isFloating ? 'none' : `1px solid ${gl02[5].value}20`,
+    // Normalization: clamp(60px, height, 80px) for B0102
+    const rawHeight = blockStyle.height || (isB0102 ? 64 : 80);
+    const blockHeight = isB0102 ? Math.min(Math.max(rawHeight, 60), 80) : rawHeight;
+
+    // Normalization: borderRadius || 50
+    const blockRadius = blockStyle.borderRadius !== undefined ? blockStyle.borderRadius : (isB0102 ? 50 : 0);
+
+    const blockBg = blockStyle.backgroundColor || (isDark ? 'rgba(30,30,30,1)' : 'rgba(255,255,255,1)');
+    const textColor = blockStyle.textColor || (isDark ? '#FFFFFF' : '#111827');
+
+    const btnStyle = blockStyle.button || { useGlobalDNA: true, scale: 1.0, paddingX: 20, paddingY: 10 };
+
+    // Logic: Force scale(1.0) and 12x24 if NOT using Global DNA
+    const btnScale = btnStyle.useGlobalDNA ? (parseFloat(gl04[0].value) || 1.0) : (btnStyle.scale || 1.0);
+    const btnPadY = btnStyle.useGlobalDNA ? (parseInt(gl04[1].value) || 12) : (btnStyle.paddingY || 12);
+    const btnPadX = btnStyle.useGlobalDNA ? (parseInt(gl04[2].value) || 24) : (btnStyle.paddingX || 24);
+    const btnFontSize = btnStyle.useGlobalDNA ? (parseInt(gl04[3].value) || 13) : (btnStyle.fontSize || 13);
+    const btnFontWeight = btnStyle.useGlobalDNA ? 700 : (btnStyle.fontWeight === 'bold' ? 700 : 500);
+
+    const posX = blockStyle.positionX || 0;
+    const posY = blockStyle.positionY || 0;
+    const isDraggable = blockStyle.isDraggable !== false;
+
+    const navStyleB0102: React.CSSProperties = isSticky ? {
+        position: 'fixed',
+        top: '24px',
+        left: '50%',
+        width: '90%',
+        maxWidth: '1200px',
+        zIndex: 9999,
+        height: blockHeight + 'px',
+        background: showGlass ? (blockBg.includes('rgba') ? blockBg.replace(/[\d.]+\)$/, '0.6)') : `${blockBg}88`) : blockBg,
+        backdropFilter: showGlass ? 'blur(16px)' : 'none',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+        borderRadius: blockRadius + 'px',
+        boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+        padding: '0 24px',
         fontFamily: 'var(--dna-font-family)',
-        maxWidth: isFloating ? '90%' : '100%',
-        margin: isFloating ? '20px auto 0' : '0',
-        borderRadius: isFloating ? (parseFloat(gl07[0].value) * 2.5) + 'px' : '0px',
-        boxShadow: isFloating ? '0 10px 40px rgba(0,0,0,0.1)' : 'none',
-        border: isFloating ? `1px solid ${gl02[5].value}15` : 'none'
+        color: textColor,
+    } : {
+        position: 'relative',
+        margin: '24px auto',
+        width: '90%',
+        maxWidth: '1200px',
+        zIndex: 10,
+        height: blockHeight + 'px',
+        background: showGlass ? (blockBg.includes('rgba') ? blockBg.replace(/[\d.]+\)$/, '0.6)') : `${blockBg}88`) : blockBg,
+        backdropFilter: showGlass ? 'blur(16px)' : 'none',
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+        borderRadius: blockRadius + 'px',
+        boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+        padding: '0 24px',
+        fontFamily: 'var(--dna-font-family)',
+        color: textColor,
     };
 
-    return (
-        <nav
-            id={id}
-            style={{
-                ...navStyle,
-                position: overrides.layout?.sticky !== false ? (isFloating ? 'fixed' : 'sticky') : 'relative',
-                top: isFloating ? '20px' : 0,
-                left: isFloating ? '50%' : 0,
-                transform: isFloating ? 'translateX(-50%)' : 'none',
-                ...getEntranceStyle(0),
-                zIndex: overrides.layout?.zIndex || 1000
-            }}
-            className={`w-full flex items-center justify-between transition-all duration-300`}
-        >
-            <style>{`
-                @keyframes nb-entrance-${id}-${motionKey} {
-                    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-                }
-            `}</style>
+    const navStyleB0101: React.CSSProperties = isSticky ? {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        height: blockHeight + 'px',
+        background: (showGlass || glassBlur > 0) ? `rgba(${isDark ? '30,30,30' : '255,255,255'},${glassOpacity})` : blockBg,
+        backdropFilter: (showGlass || glassBlur > 0) ? `blur(${glassBlur || 16}px)` : 'none',
+        paddingLeft: (overrides.layout?.paddingX || 40) + 'px',
+        paddingRight: (overrides.layout?.paddingX || 40) + 'px',
+        borderBottom: `1px solid ${gl02[5].value}20`,
+        fontFamily: 'var(--dna-font-family)',
+        borderRadius: blockRadius + 'px',
+        color: textColor
+    } : {
+        position: 'relative',
+        zIndex: 10,
+        height: blockHeight + 'px',
+        background: (showGlass || glassBlur > 0) ? `rgba(${isDark ? '30,30,30' : '255,255,255'},${glassOpacity})` : blockBg,
+        backdropFilter: (showGlass || glassBlur > 0) ? `blur(${glassBlur || 16}px)` : 'none',
+        paddingLeft: (overrides.layout?.paddingX || 40) + 'px',
+        paddingRight: (overrides.layout?.paddingX || 40) + 'px',
+        borderBottom: `1px solid ${gl02[5].value}20`,
+        fontFamily: 'var(--dna-font-family)',
+        width: '100%',
+        borderRadius: blockRadius + 'px',
+        color: textColor
+    };
 
-            <div className="flex items-center gap-3">
+    if (isB0102) {
+        // ELITE NAVBAR (B0102) - Floating Center Design
+        return (
+            <motion.nav
+                id={id}
+                drag={isDraggable}
+                dragMomentum={false}
+                onDragEnd={(_, info) => {
+                    updateBlockLocal(id, 'style.positionX', posX + info.offset.x);
+                    updateBlockLocal(id, 'style.positionY', posY + info.offset.y);
+                }}
+                whileDrag={{ scale: 1.02, opacity: 0.9, boxShadow: isDark ? '0 30px 60px -10px rgba(0,0,0,0.7)' : '0 30px 60px -10px rgba(0,0,0,0.25)', cursor: 'grabbing' }}
+                initial={{ y: -50, opacity: 0, x: isSticky ? '-50%' : '0' }}
+                animate={{
+                    y: posY,
+                    opacity: 1,
+                    x: isSticky ? `calc(-50% + ${posX}px)` : posX
+                }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                    ...navStyleB0102,
+                    animation: 'none',
+                    transition: 'box-shadow 0.3s ease, background 0.3s ease',
+                    cursor: isDraggable ? 'grab' : 'default'
+                }}
+                className="flex items-center"
+            >
+                <style>{`
+                    .elite-logo-text {
+                        background: linear-gradient(135deg, ${gl02[2].value}, ${gl02[2].value}88);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                `}</style>
+
+                {/* Left: Logo */}
+                <div className="flex-1 flex items-center gap-3">
+                    {safeData.showIcon !== false && (
+                        <div
+                            style={{ backgroundColor: gl02[2].value }}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-blue-500/20"
+                        >
+                            G
+                        </div>
+                    )}
+                    <div
+                        style={{ ...logoStyle, fontFamily: 'var(--dna-font-family)' }}
+                        className="opacity-90 whitespace-nowrap elite-logo-text font-black"
+                    >
+                        {safeData.logo}
+                    </div>
+                </div>
+
+                {/* Center: Links */}
+                {!isMobileMode && (
+                    <div className="flex-none flex items-center gap-8 justify-center">
+                        {(safeData.links || []).map((link: any) => {
+                            const lStyle = getTypoStyle(link.typo, { fontSize: '14px', fontWeight: '600', letterSpacing: '0.02em', lineHeight: '1' });
+                            return (
+                                <motion.a
+                                    key={link.id}
+                                    href={link.type === 'anchor' ? `#${link.value}` : link.value}
+                                    style={{ ...lStyle, color: textColor }}
+                                    whileHover={{ y: -2 }}
+                                    className="relative opacity-70 hover:opacity-100 transition-all group py-2"
+                                >
+                                    <span className="relative z-10">{link.label}</span>
+                                    <motion.div
+                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full"
+                                        initial={{ width: 0 }}
+                                        whileHover={{ width: '100%' }}
+                                        style={{ backgroundColor: gl02[2].value }}
+                                    />
+                                </motion.a>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Right: Actions */}
+                <div className="flex-1 flex items-center gap-4 justify-end">
+                    <button onClick={toggleSiteTheme} style={{ color: textColor }} className="p-2 opacity-60 hover:opacity-100 transition-all rounded-full">
+                        {!isDark ? <Moon size={18} strokeWidth={1.5} /> : <Sun size={18} strokeWidth={1.5} />}
+                    </button>
+                    {!isMobileMode && safeData.showActionButton !== false && (
+                        <button
+                            style={{
+                                backgroundColor: isDark ? '#FFFFFF' : gl02[2].value,
+                                color: isDark ? '#000000' : '#FFFFFF',
+                                padding: `${btnPadY}px ${btnPadX}px`,
+                                borderRadius: btnStyle.useGlobalDNA ? (gl07[3].value + 'px') : '999px',
+                                fontSize: `${btnFontSize}px`,
+                                fontWeight: btnFontWeight,
+                                fontFamily: 'var(--dna-font-family)',
+                                boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2)',
+                                transform: `scale(${btnScale})`
+                            }}
+                            className="hover:scale-110 active:scale-95 transition-all flex items-center justify-center whitespace-nowrap"
+                        >
+                            {safeData.ctaText || 'Action'}
+                        </button>
+                    )}
+                </div>
+            </motion.nav>
+        );
+    }
+
+    // STANDARD NAVBAR (B0101) - Classic Full Width Design
+    return (
+        <motion.nav
+            id={id}
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            style={{
+                ...navStyleB0101,
+                animation: 'none',
+                transition: 'all 0.3s ease'
+            }}
+            className="flex items-center justify-between"
+        >
+            {/* Left: Logo + Branding */}
+            <div className="flex items-center gap-4">
                 {safeData.showIcon !== false && (
-                    <div className="flex items-center justify-center overflow-hidden">
-                        {safeData.iconType === 'custom' && safeData.customIconUrl ? (
-                            <img src={safeData.customIconUrl} className="h-8 w-8 object-contain" alt="Logo" />
-                        ) : (
-                            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs ring-4 ring-blue-500/10">
-                                G
-                            </div>
-                        )}
+                    <div
+                        style={{ backgroundColor: gl02[2].value }}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold"
+                    >
+                        {safeData.logo?.[0] || 'G'}
                     </div>
                 )}
                 <div
-                    style={{
-                        color: textColor,
-                        ...logoStyle,
-                        fontFamily: 'var(--dna-font-family)'
-                    }}
-                    className="opacity-90 whitespace-nowrap"
+                    style={{ ...logoStyle, color: textColor, fontFamily: 'var(--dna-font-family)' }}
+                    className="opacity-100 whitespace-nowrap"
                 >
                     {safeData.logo}
                 </div>
             </div>
 
-            {!isMobileMode && (
-                <div className="hidden md:flex items-center gap-8">
-                    {(safeData.links || []).map((link: any, index: number) => {
-                        const lStyle = getTypoStyle(link.typo, {
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            letterSpacing: '0',
-                            lineHeight: '1',
-                            textTransform: 'none' as const
-                        });
+            {/* Right: Menu + Actions */}
+            <div className="flex items-center gap-8">
+                {!isMobileMode && (
+                    <div className="hidden md:flex items-center gap-6">
+                        {(safeData.links || []).map((link: any) => {
+                            const lStyle = getTypoStyle(link.typo, { fontSize: '14px', fontWeight: '500', letterSpacing: '0', lineHeight: '1.2' });
+                            return (
+                                <a
+                                    key={link.id}
+                                    href={link.type === 'anchor' ? `#${link.value}` : link.value}
+                                    style={{ ...lStyle, color: textColor }}
+                                    className="opacity-70 hover:opacity-100 transition-all py-2 border-b-2 border-transparent hover:border-current"
+                                >
+                                    {link.label}
+                                </a>
+                            );
+                        })}
+                    </div>
+                )}
 
-                        const isMagnetic = overrides.layout?.variant === 'magnetic';
-                        const strength = parseFloat(overrides.physics?.strength) || 1;
-                        const friction = parseFloat(overrides.physics?.friction) || 0.1;
+                <div className="flex items-center gap-3">
+                    <button onClick={toggleSiteTheme} style={{ color: textColor }} className="p-2 opacity-70 hover:opacity-100 transition-all">
+                        {!isDark ? <Moon size={20} strokeWidth={1.5} /> : <Sun size={20} strokeWidth={1.5} />}
+                    </button>
 
-                        return (
-                            <motion.a
-                                key={link.id}
-                                href={link.type === 'anchor' ? `#${link.value}` : link.value}
-                                target={link.type === 'url' ? '_blank' : undefined}
-                                rel={link.type === 'url' ? 'noopener noreferrer' : undefined}
-                                style={{ ...lStyle, color: textColor, ...getEntranceStyle(index + 1) }}
-                                whileHover={isMagnetic ? {
-                                    x: (Math.random() - 0.5) * 10 * strength,
-                                    y: (Math.random() - 0.5) * 10 * strength,
-                                    scale: 1.1,
-                                    transition: { type: 'spring', stiffness: 400 * (1 - friction), damping: 10 * (1 + friction) }
-                                } : { scale: 1.05 }}
-                                className="relative opacity-70 hover:opacity-100 transition-all group py-2"
-                            >
-                                <span className="relative z-10">{link.label}</span>
-                                <div
-                                    className="absolute bottom-0 left-0 w-0 h-[2px] transition-all duration-300 group-hover:w-full"
-                                    style={{ backgroundColor: gl02[2].value }}
-                                />
-                            </motion.a>
-                        );
-                    })}
+                    {!isMobileMode && safeData.showActionButton !== false && (
+                        <button
+                            style={{
+                                backgroundColor: gl02[2].value,
+                                color: 'white',
+                                padding: '10px 24px',
+                                borderRadius: gl07[0].value + 'px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                fontFamily: 'var(--dna-font-family)'
+                            }}
+                            className="hover:brightness-110 active:scale-95 transition-all shadow-sm"
+                        >
+                            {safeData.actionButtonText || 'Start'}
+                        </button>
+                    )}
+
+                    {isMobileMode && (
+                        <button style={{ color: textColor }} className="p-2">
+                            <Menu size={24} />
+                        </button>
+                    )}
                 </div>
-            )}
-
-            <div className="flex items-center gap-4">
-                <button
-                    onClick={toggleSiteTheme}
-                    style={{ color: textColor }}
-                    className="p-2 opacity-60 hover:opacity-100 transition-all hover:bg-black/5 rounded-full"
-                >
-                    {!isDark ? <Moon size={20} strokeWidth={1.5} /> : <Sun size={20} strokeWidth={1.5} />}
-                </button>
-
-                {!isMobileMode && safeData.showActionButton !== false && (
-                    <button
-                        style={{
-                            backgroundColor: gl02[2].value,
-                            color: 'white',
-                            padding: '10px 24px',
-                            borderRadius: gl07[0].value + 'px',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            fontFamily: 'var(--dna-font-family)'
-                        }}
-                        className="hover:scale-105 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center whitespace-nowrap"
-                    >
-                        {safeData.actionButtonText || 'Action'}
-                    </button>
-                )}
-
-                {isMobileMode && (
-                    <button style={{ color: textColor }} className="p-2 opacity-70 hover:opacity-100">
-                        <Menu size={24} />
-                    </button>
-                )}
             </div>
-        </nav>
+        </motion.nav>
     );
 };

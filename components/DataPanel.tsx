@@ -6,6 +6,17 @@ import { Printer, Code, FileCode, Archive, X } from 'lucide-react';
 export const DataPanel: React.FC = () => {
   const { uiTheme, toggleDataPanel, exportProjectData } = useStore();
 
+  // Auto Contrast Logic
+  const getContrastColor = (hexColor: string) => {
+    if (!hexColor) return '#FFFFFF';
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? '#000000' : '#FFFFFF';
+  };
+  const dynamicTextColor = getContrastColor(uiTheme.lightPanel);
+
   const handleExportJSON = () => {
     const data = exportProjectData();
     const blob = new Blob([data], { type: 'application/json' });
@@ -61,7 +72,7 @@ export const DataPanel: React.FC = () => {
       style={{
         backgroundColor: uiTheme.lightPanel,
         borderColor: uiTheme.elements,
-        color: uiTheme.fonts,
+        color: dynamicTextColor,
         borderLeftWidth: 'var(--ui-stroke-width)'
       }}
     >

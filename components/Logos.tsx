@@ -9,7 +9,7 @@ export const Logos: React.FC<{ id: string, localOverrides: any }> = ({ id, local
     const style = {
         paddingTop: (overrides.layout?.paddingY || '60') + 'px',
         paddingBottom: (overrides.layout?.paddingY || '60') + 'px',
-        backgroundColor: overrides.style?.background || 'transparent',
+        backgroundColor: overrides.style?.bgFill || overrides.style?.background || 'transparent',
     };
 
     const logos = overrides.data?.items || [

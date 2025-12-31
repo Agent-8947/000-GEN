@@ -3,8 +3,9 @@ import React from 'react';
 import { useStore } from '../store';
 
 export const ExportPanel: React.FC = () => {
-  const { theme } = useStore();
-  const isDark = theme === 'dark';
+  /* Fix: Correctly access theme mode from globalSettings as 'theme' property does not exist in store */
+  const { globalSettings } = useStore();
+  const isDark = globalSettings['GL10']?.params[6]?.value === 'Dark';
   
   const bgColor = isDark ? 'bg-[#0A0A0A]' : 'bg-white';
   const borderColor = isDark ? 'border-[#1A1A1A]' : 'border-[#D1D5DB]';

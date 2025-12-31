@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, DNAParameter } from '../store';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, GripHorizontal } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, param }) => {
   const updateParam = useStore(state => state.updateParam);
@@ -12,6 +13,16 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
   const startVal = useRef(0);
 
   const [localVal, setLocalVal] = useState(param.value);
+
+  // Auto Contrast Logic
+  const getContrastColor = (hexColor: string) => {
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? '#000000' : '#FFFFFF';
+  };
+  const textColor = param.type === 'color' ? getContrastColor(param.value) : undefined;
 
   useEffect(() => {
     if (!isDragging) {
@@ -80,7 +91,7 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
         return (
           <div className="flex items-center gap-3 transition-colors">
             <input
-              className="bg-transparent border-none outline-none text-right font-mono text-[13px] w-[50px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
+              className="bg-transparent border-none outline-none text-right font-mono text-sm w-[60px] focus:text-blue-500 placeholder:opacity-20 transition-colors"
               value={localVal}
               onChange={(e) => setLocalVal(e.target.value)}
               onBlur={handleCommit}
@@ -119,29 +130,32 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
               className="w-6 h-6 border border-black/10 rounded-full shadow-sm"
               style={{ backgroundColor: param.value }}
             />
-            <span className="font-mono text-[13px] opacity-60 uppercase tracking-wider relative z-0">
+            <span className="font-mono text-sm uppercase tracking-wider relative z-0" style={{ color: textColor }}>
               {param.value}
             </span>
           </div>
         );
       case 'toggle':
+        const isTrue = param.value === 'true';
         return (
-          <button
-            onClick={() => updateParam(glId, param.id, param.value === 'true' ? 'false' : 'true')}
-            className={`text-[11px] px-3.5 py-1.5 border rounded-full transition-all font-medium ${param.value === 'true'
-              ? 'bg-blue-500 border-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'
-              : 'border-white/20 opacity-40 hover:opacity-100 hover:border-white/40'
-              }`}
-          >
-            {param.value === 'true' ? 'ON' : 'OFF'}
-          </button>
+          <div className="flex items-center gap-3">
+            <span className={`text-[10px] font-bold tracking-widest transition-opacity ${isTrue ? 'opacity-100' : 'opacity-20'}`} style={{ color: isTrue ? useStore.getState().uiTheme.accents : undefined }}>
+              ON
+            </span>
+            <button
+              onClick={() => updateParam(glId, param.id, isTrue ? 'false' : 'true')}
+              className={`w-10 h-5 rounded-full transition-all relative flex items-center px-1 ${isTrue ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-white/10 opacity-40 hover:opacity-100'}`}
+            >
+              <div className={`w-3 h-3 bg-white rounded-full transition-transform duration-300 ${isTrue ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
         );
       case 'select':
         return (
           <select
             value={param.value}
             onChange={(e) => updateParam(glId, param.id, e.target.value)}
-            className="bg-transparent text-[13px] font-mono opacity-60 hover:opacity-100 transition-opacity outline-none cursor-pointer"
+            className="bg-transparent text-sm font-mono opacity-60 hover:opacity-100 transition-opacity outline-none cursor-pointer"
           >
             {param.options?.map(opt => (
               <option key={opt} value={opt} className="bg-[#0A0A0A] text-white">{opt}</option>
@@ -149,7 +163,7 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
           </select>
         );
       default:
-        return <span className="font-mono text-[13px] opacity-60">{param.value}</span>;
+        return <span className="font-mono text-sm opacity-60">{param.value}</span>;
     }
   };
 
@@ -160,10 +174,10 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex flex-col">
-        <span className="text-[9px] font-mono opacity-20 group-hover/row:opacity-40 transition-opacity uppercase tracking-tighter">
+        <span className="text-xs font-mono opacity-20 group-hover/row:opacity-40 transition-opacity uppercase tracking-tighter">
           {param.id}
         </span>
-        <span className="text-[12px] font-medium tracking-tight opacity-50 group-hover/row:opacity-100 transition-opacity">
+        <span className="text-sm font-medium tracking-tight opacity-50 group-hover/row:opacity-100 transition-opacity">
           {param.name}
         </span>
         <div className="h-[1px] w-0 group-hover/row:w-full bg-blue-500/50 transition-all duration-300 mt-0.5" />
@@ -174,24 +188,41 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
 };
 
 export const GlobalSettings: React.FC = () => {
-  const { globalSettings, uiTheme } = useStore();
+  const { globalSettings, uiTheme, updatePanelPosition } = useStore();
   const [activeGroup, setActiveGroup] = useState<string | null>('GL01');
 
+  // Panel State
+  const posX = uiTheme.panelX || 0;
+  const posY = uiTheme.panelY || 0;
+  const isFloating = uiTheme.isFloating;
+
   return (
-    <div
-      className="w-[380px] h-full border-r animate-[slideIn_0.3s_ease-out] transition-colors duration-500 relative flex flex-col overflow-hidden global-settings z-50"
+    <motion.div
+      drag={isFloating}
+      dragMomentum={false}
+      onDragEnd={(_, info) => {
+        updatePanelPosition(posX + info.offset.x, posY + info.offset.y);
+      }}
+      initial={{ x: isFloating ? posX : -380, opacity: 0 }}
+      animate={{ x: isFloating ? posX : 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      className="w-[380px] h-full border-r transition-colors duration-500 relative flex flex-col overflow-hidden global-settings z-50 shadow-2xl"
       style={{
         backgroundColor: uiTheme.lightPanel,
         color: uiTheme.fonts,
         borderColor: uiTheme.elements,
-        borderRightWidth: 'var(--ui-stroke-width)'
+        borderRightWidth: 'var(--ui-stroke-width)',
+        position: isFloating ? 'fixed' : 'relative',
+        top: isFloating ? 0 : 'auto',
+        left: isFloating ? 0 : 'auto',
+        bottom: isFloating ? 'auto' : 0,
+        height: isFloating ? '85vh' : '100%',
+        marginTop: isFloating ? '80px' : '0',
+        marginLeft: isFloating ? '20px' : '0',
+        borderRadius: isFloating ? '16px' : '0'
       }}
     >
       <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(-100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
@@ -201,10 +232,14 @@ export const GlobalSettings: React.FC = () => {
         }
       `}</style>
 
-      <div className="p-8 pb-2">
-        <h2 className="font-sans font-medium text-[13px] tracking-[0.4em] uppercase opacity-40 pb-6 select-none flex items-center justify-between">
+      <div className="p-8 pb-2 cursor-grab active:cursor-grabbing group/header">
+        <div className="flex items-center justify-between opacity-40 group-hover/header:opacity-100 transition-opacity mb-4">
+          <GripHorizontal size={20} />
+          <span className="text-[10px] font-mono opacity-50">DRAG_HANDLE</span>
+        </div>
+        <h2 className="font-sans font-medium text-sm tracking-[0.4em] uppercase opacity-40 pb-6 select-none flex items-center justify-between">
           <span>DNA_MATRIX_v1.2</span>
-          <span className="text-[10px] animate-pulse" style={{ color: uiTheme.accents }}>SYSTEM_CALIBRATED</span>
+          <span className="text-xs animate-pulse" style={{ color: uiTheme.accents }}>SYSTEM_CALIBRATED</span>
         </h2>
       </div>
 
@@ -226,12 +261,12 @@ export const GlobalSettings: React.FC = () => {
               >
                 <div className="flex items-center gap-6">
                   <span
-                    className="text-[16px] font-mono transition-colors"
+                    className="text-lg font-mono transition-colors"
                     style={{ color: activeGroup === id ? uiTheme.accents : uiTheme.elements, opacity: activeGroup === id ? 1 : 0.3 }}
                   >
                     {id}
                   </span>
-                  <span className={`text-[15px] font-semibold uppercase tracking-[0.15em] transition-all text-current ${activeGroup === id ? 'translate-x-1' : 'opacity-70 group-hover/btn:opacity-100'}`}>
+                  <span className={`text-base font-semibold uppercase tracking-[0.15em] transition-all text-current ${activeGroup === id ? 'translate-x-1' : 'opacity-70 group-hover/btn:opacity-100'}`}>
                     {g.name}
                   </span>
                 </div>
@@ -239,7 +274,7 @@ export const GlobalSettings: React.FC = () => {
                   className={`transition-transform duration-300 ${activeGroup === id ? 'rotate-180' : 'opacity-20'}`}
                   style={{ color: activeGroup === id ? uiTheme.accents : undefined }}
                 >
-                  <ChevronDown size={18} strokeWidth={1.5} />
+                  <ChevronDown size={22} strokeWidth={1.5} />
                 </div>
               </button>
 
@@ -259,12 +294,12 @@ export const GlobalSettings: React.FC = () => {
       </div>
 
       <div
-        className="absolute bottom-0 left-0 right-0 p-6 border-t z-10 flex justify-between items-center opacity-25 text-[10px] font-mono tracking-widest"
+        className="absolute bottom-0 left-0 right-0 p-6 border-t z-10 flex justify-between items-center opacity-25 text-xs font-mono tracking-widest"
         style={{ borderColor: uiTheme.elements, borderTopWidth: 'var(--ui-stroke-width)' }}
       >
         <span>70_SLOTS_INITIALIZED</span>
         <span>BUILD_1.2.0_DNA</span>
       </div>
-    </div>
+    </motion.div>
   );
 };

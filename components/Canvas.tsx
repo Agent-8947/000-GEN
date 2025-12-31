@@ -2,12 +2,20 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../store';
 import { ContentBlock } from './ContentBlock';
-import { Toolbar } from './Toolbar';
 
 export const Canvas: React.FC = () => {
-  const { contentBlocks, viewportMode, cycleGrid, gridMode, globalSettings } = useStore();
-  const isDark = globalSettings['GL11'].params[0].value === 'Dark';
+  const { contentBlocks, viewportMode, cycleGrid, gridMode, globalSettings, selectedBlockId } = useStore();
+  const isDark = globalSettings['GL10']?.params[6]?.value === 'Dark';
   const isMobile = viewportMode === 'mobile';
+
+  useEffect(() => {
+    if (selectedBlockId) {
+      const element = document.getElementById(selectedBlockId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [selectedBlockId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -19,30 +27,15 @@ export const Canvas: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [cycleGrid]);
 
-  const borderColor = isDark ? 'border-[#2A2A2A]' : 'border-[#D1D5DB]';
   const gridColor = isDark ? 'text-white/[0.04]' : 'text-black/[0.06]';
   const globalBg = globalSettings.GL02.params[0].value;
-  const patternType = globalSettings.GL02.params[7]?.value || 'None';
-  const patternOpacity = (parseFloat(globalSettings.GL02.params[8]?.value || '10') / 100);
-  const patternSize = parseFloat(globalSettings.GL02.params[9]?.value || '20');
-  const textColorDNA = globalSettings.GL02.params[3].value;
-
-  const getPatternCSS = (type: string) => {
-    if (type === 'Dots') return `radial-gradient(${textColorDNA} 1px, transparent 1px)`;
-    if (type === 'Checkered') return `linear-gradient(to right, ${textColorDNA} 1px, transparent 1px), linear-gradient(to bottom, ${textColorDNA} 1px, transparent 1px)`;
-    if (type === 'Noise') return `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC42NSIgbnVtT2N0YXZlcz0iMyIgc3RpdGNoVGlsZXM9InN0IHN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNuKSIgb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')`;
-    return 'none';
-  };
 
   return (
     <div className={`flex-1 h-full relative overflow-hidden ${gridColor} transition-colors duration-500 flex flex-col items-center`}>
-      <Toolbar />
       <div className={`flex-1 w-full overflow-hidden transition-all duration-700 ${isMobile ? 'pb-12 perspective-[1500px]' : ''}`}>
         <div
           style={{
             backgroundColor: globalBg,
-            backgroundSize: patternType === 'Noise' ? '200px 200px' : `${patternSize}px ${patternSize}px`,
-            backgroundAttachment: 'local',
             fontSize: '16px'
           }}
           className={`relative transition-all duration-700 ease-in-out origin-top mx-auto overflow-y-auto overflow-x-hidden ${isMobile
@@ -50,17 +43,6 @@ export const Canvas: React.FC = () => {
             : 'w-full h-full'
             }`}
         >
-          {patternType !== 'None' && (
-            <div
-              className="absolute inset-0 pointer-events-none z-0"
-              style={{
-                backgroundImage: getPatternCSS(patternType),
-                backgroundSize: patternType === 'Noise' ? '200px 200px' : `${patternSize}px ${patternSize}px`,
-                opacity: patternOpacity
-              }}
-            />
-          )}
-
           {isMobile && (
             <div className="sticky top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1A1A1A] rounded-b-2xl z-[100] mb-[-24px]" />
           )}

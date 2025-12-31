@@ -47,12 +47,16 @@ interface GridState {
     uiElementStroke: number;
     uiTextBrightness: number;
     uiBaseFontSize: number;
+    panelX: number;
+    panelY: number;
+    isFloating: boolean;
   };
   canvasKey: number;
   isGlobalOpen: boolean;
   isBlockListOpen: boolean;
   isManagerOpen: boolean;
   isDataPanelOpen: boolean;
+  isThemePanelOpen: boolean;
   globalSettings: Record<string, GlobalSetting>;
   pages: Record<string, ContentBlock[]>;
   currentPage: string;
@@ -73,12 +77,14 @@ interface GridState {
 
   togglePreviewMode: () => void;
   updateUITheme: (key: string, value: any) => void;
+  updatePanelPosition: (x: number, y: number) => void;
   applyThemePreset: (presetName: string) => void;
   toggleSiteTheme: () => void;
   toggleGlobal: () => void;
   toggleBlockList: () => void;
   toggleManager: () => void;
   toggleDataPanel: () => void;
+  toggleThemePanel: () => void;
   refreshCanvas: () => void;
   updateGlobal: (glId: string, idx: number, val: string) => void;
   updateParam: (glId: string, paramId: string, value: string) => void;
@@ -123,22 +129,26 @@ export const useStore = create<GridState>()(
     (set, get) => ({
       isPreviewMode: false,
       uiTheme: {
-        fonts: '#000000',
-        darkPanel: '#CBD5E1', // Slate 300 for contrast
-        lightPanel: '#F1F5F9', // Slate 100
-        elements: '#000000',
-        accents: '#000000',
-        interfaceScale: 100,
-        uiFontWeight: 700,
+        fonts: '#FFFFFF',
+        darkPanel: '#0F172A',
+        lightPanel: '#1E293B',
+        elements: '#38BDF8',
+        accents: '#3B82F6',
+        interfaceScale: 105,
+        uiFontWeight: 900,
         uiElementStroke: 1,
         uiTextBrightness: 100,
-        uiBaseFontSize: 13
+        uiBaseFontSize: 16,
+        panelX: 0,
+        panelY: 0,
+        isFloating: true
       },
       canvasKey: 0,
       isGlobalOpen: false,
       isBlockListOpen: false,
       isManagerOpen: false,
       isDataPanelOpen: false,
+      isThemePanelOpen: false,
       pages: { 'home': [] },
       currentPage: 'home',
       snapshots: [],
@@ -230,8 +240,8 @@ export const useStore = create<GridState>()(
           'GL07': { name: 'Radius', params: ["Global", "Inner", "Outer", "Button", "Input", "Card", "Multiplier"] },
           'GL08': { name: 'Icons', params: ["Size", "Stroke", "Optical", "Align", "Set ID", "Style", "Spacing"] },
           'GL09': { name: 'Animation', params: ["Duration", "Easing", "Entrance", "Hover", "Scroll", "Loop", "Physics"] },
-          'GL10': { name: 'System Meta', params: ["SEO", "Analytics", "API Root", "Export", "Meta", "Environment", "Status"] },
-          'GL11': { name: 'Site Engine', params: ["Site Theme Mode", "Adaptive Scale"] }
+          'GL10': { name: 'System Meta', params: ["SEO", "Analytics", "API Root", "Export", "Meta", "Environment", "Theme Mode"] },
+          'GL11': { name: 'Sticky Navigation', params: ["Sticky Mode"] }
         };
 
         return Object.entries(groups).reduce((acc, [id, group]) => {
@@ -251,12 +261,12 @@ export const useStore = create<GridState>()(
                 else if (j === 7) type = 'select';
                 else type = 'range';
 
-                const colors = ["#F3F4F6", "#FFFFFF", "#3B82F6", "#111827", "#6B7280", "#E5E7EB", "#FFFFFF"];
+                const colors = ["#09090B", "#18181B", "#3B82F6", "#FFFFFF", "#A1A1AA", "#27272A", "false"];
                 if (j < 7) {
                   value = j < 6 ? colors[j] : 'false';
                 } else if (j === 7) {
                   value = "None";
-                  options = ["None", "Noise", "Dots", "Checkered"];
+                  options = ["None", "Noise", "Dots", "Checkered", "Grid"];
                 } else if (j === 8 || j === 9) { // Pattern Opacity (P9) and Pattern Size (P10)
                   value = j === 8 ? "10" : "20";
                   type = 'range';
@@ -268,11 +278,11 @@ export const useStore = create<GridState>()(
                   { v: "16", min: 10, max: 24, t: 'range' },    // Base Size
                   { v: "1.25", min: 1.1, max: 2.0, t: 'range' }, // Scale Ratio
                   { v: "1.5", min: 1.0, max: 2.5, t: 'range' },  // Line Height
-                  { v: "400", min: 100, max: 900, t: 'range' },  // Weight
-                  { v: "-0.01", min: -0.05, max: 0.5, t: 'range' }, // Tracking
+                  { v: "900", min: 100, max: 900, t: 'range' },  // Weight
+                  { v: "-0.02", min: -0.05, max: 0.5, t: 'range' }, // Tracking
                   { v: "false", min: 0, max: 0, t: 'toggle' },   // Uppercase
                   { v: "true", min: 0, max: 0, t: 'toggle' },     // Smoothing
-                  { v: "Space Grotesk", min: 0, max: 0, t: 'select', opts: ['Space Grotesk', 'Open Sans', 'Roboto', 'Inter', 'Manrope', 'Agency', 'Ancorli', 'Share Tech', 'Lilex', 'Orbitron', 'Google Sans', 'Code'] } // Font Family
+                  { v: "Space Grotesk", min: 0, max: 0, t: 'select', opts: ['Space Grotesk', 'Inter', 'Roboto', 'Open Sans', 'Manrope', 'Agency', 'Ancorli', 'Share Tech', 'Lilex', 'Orbitron', 'Google Sans', 'Code'] } // Font Family
                 ];
                 const s = spec[j] as any;
                 type = s.t;
@@ -391,16 +401,16 @@ export const useStore = create<GridState>()(
               } else if (paramName.toLowerCase().includes('duration')) {
                 value = '0.3';
                 max = 2;
-                min = 0;
-              } else if (id === 'GL11') {
-                if (j === 0) { // Site Theme Mode
+              } else if (id === 'GL10') {
+                if (j === 6) { // Theme Mode
                   type = 'select';
-                  value = 'Light';
+                  value = 'Dark';
                   options = ['Light', 'Dark'];
-                } else if (j === 1) { // Adaptive Scale
-                  type = 'range';
-                  value = '100';
-                  min = 50; max = 150;
+                }
+              } else if (id === 'GL11') {
+                if (j === 0) { // GL11 - navbarSticky
+                  type = 'toggle';
+                  value = 'true';
                 }
               }
 
@@ -418,6 +428,7 @@ export const useStore = create<GridState>()(
           state.isGlobalOpen = false;
           state.isBlockListOpen = false;
           state.isDataPanelOpen = false;
+          state.isThemePanelOpen = false;
           document.documentElement.requestFullscreen().catch(() => { });
         } else if (document.fullscreenElement) {
           document.exitFullscreen();
@@ -432,6 +443,11 @@ export const useStore = create<GridState>()(
         }));
       },
 
+      updatePanelPosition: (x, y) => set(produce((state: GridState) => {
+        state.uiTheme.panelX = x;
+        state.uiTheme.panelY = y;
+      })),
+
       applyThemePreset: (name) => {
         get().takeHistorySnapshot();
         set(produce((state: GridState) => {
@@ -445,10 +461,10 @@ export const useStore = create<GridState>()(
       toggleSiteTheme: () => {
         get().takeHistorySnapshot();
         set(produce((state: GridState) => {
-          const currentMode = state.globalSettings['GL11'].params[0].value;
+          const currentMode = state.globalSettings['GL10'].params[6].value;
           const newMode = currentMode === 'Light' ? 'Dark' : 'Light';
-          state.globalSettings['GL11'].params[0].value = newMode;
-          state.canvasKey += 1;
+          state.globalSettings['GL10'].params[6].value = newMode;
+          // state.canvasKey += 1; // Removed to preserve scroll position and prevent re-animation
 
           const isDark = newMode === 'Dark';
           if (isDark) {
@@ -478,6 +494,8 @@ export const useStore = create<GridState>()(
         if (state.isGlobalOpen) {
           state.isBlockListOpen = false;
           state.isManagerOpen = false;
+          state.isDataPanelOpen = false;
+          state.isThemePanelOpen = false;
         }
       })),
 
@@ -486,17 +504,35 @@ export const useStore = create<GridState>()(
         if (state.isBlockListOpen) {
           state.isGlobalOpen = false;
           state.isManagerOpen = false;
+          state.isDataPanelOpen = false;
+          state.isThemePanelOpen = false;
         }
       })),
 
       toggleManager: () => set({
         isManagerOpen: !get().isManagerOpen,
         isBlockListOpen: false,
-        isGlobalOpen: false
+        isGlobalOpen: false,
+        isDataPanelOpen: false,
+        isThemePanelOpen: false
       }),
 
       toggleDataPanel: () => set(produce((state: GridState) => {
         state.isDataPanelOpen = !state.isDataPanelOpen;
+        if (state.isDataPanelOpen) {
+          state.isThemePanelOpen = false;
+          state.isGlobalOpen = false;
+          state.isBlockListOpen = false;
+        }
+      })),
+
+      toggleThemePanel: () => set(produce((state: GridState) => {
+        state.isThemePanelOpen = !state.isThemePanelOpen;
+        if (state.isThemePanelOpen) {
+          state.isDataPanelOpen = false;
+          state.isGlobalOpen = false;
+          state.isBlockListOpen = false;
+        }
       })),
 
       refreshCanvas: () => set(produce((state: GridState) => {
@@ -578,26 +614,7 @@ export const useStore = create<GridState>()(
           }
 
           if (glId === 'GL11' && paramId === 'P1') {
-            const isDark = value === 'Dark';
-            if (isDark) {
-              state.globalSettings['GL02'].params[0].value = '#1A1A1A';
-              state.globalSettings['GL02'].params[1].value = '#242424';
-              state.globalSettings['GL02'].params[2].value = '#60A5FA';
-              state.globalSettings['GL02'].params[3].value = '#F9FAFB';
-              state.globalSettings['GL02'].params[4].value = '#9CA3AF';
-              state.globalSettings['GL02'].params[5].value = '#374151';
-              state.globalSettings['GL06'].params[0].value = '5';
-              state.globalSettings['GL06'].params[3].value = '20';
-            } else {
-              state.globalSettings['GL02'].params[0].value = '#FFFFFF';
-              state.globalSettings['GL02'].params[1].value = '#F3F4F6';
-              state.globalSettings['GL02'].params[2].value = '#3B82F6';
-              state.globalSettings['GL02'].params[3].value = '#1A1A1A';
-              state.globalSettings['GL02'].params[4].value = '#6B7280';
-              state.globalSettings['GL02'].params[5].value = '#E5E7EB';
-              state.globalSettings['GL06'].params[0].value = '10';
-              state.globalSettings['GL06'].params[3].value = '100';
-            }
+            // GL11 is now purely Sticky Toggle. No side effects.
           }
         }));
       },
@@ -624,49 +641,59 @@ export const useStore = create<GridState>()(
                 logo: '000-GEN',
                 logoTypo: { useGlobal: true, fontSize: '20', fontWeight: '800', letterSpacing: '0.1', lineHeight: '1', uppercase: true },
                 showIcon: true, iconType: 'default', customIconUrl: '',
-                showActionButton: true, actionButtonText: 'Start Build',
+                showActionButton: false, actionButtonText: 'Start Build',
                 links: [
                   { id: 'l1', label: 'Architecture', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
                   { id: 'l2', label: 'DNA Matrix', type: 'anchor', value: 'DNA', typo: { useGlobal: true } }
                 ]
               },
-              layout: { height: '80px', paddingX: '40', paddingY: '0', sticky: true, zIndex: 1000, variant: 'default' },
-              style: { useGlobalDNA: true },
-              btnUseGlobal: true,
-              btnStyles: { size: "1.0", padX: "24", padY: "12", font: "12", stroke: "1", radius: "4", shadow: "false" },
+              layout: { paddingX: '40', paddingY: '0', zIndex: 1000, variant: 'default' },
+              style: {
+                useGlobalDNA: true,
+                height: 80,
+                borderRadius: 0,
+                backgroundColor: 'rgba(255, 255, 255, 1)',
+                glassEffect: false,
+                button: {
+                  useGlobalDNA: true,
+                  scale: 1.0,
+                  paddingX: 20,
+                  paddingY: 10
+                }
+              },
             },
             'B0102': {
               data: {
-                logo: '000-GEN',
-                logoTypo: { useGlobal: true, fontSize: '20', fontWeight: '800', letterSpacing: '0.1', lineHeight: '1', uppercase: true },
+                logo: 'ELITE-GEN',
+                logoTypo: { useGlobal: true, fontSize: '18', fontWeight: '900', letterSpacing: '0.05', lineHeight: '1', uppercase: true },
                 showIcon: true, iconType: 'default', customIconUrl: '',
-                showActionButton: true, actionButtonText: 'Initialize',
+                showActionButton: true, ctaText: 'Launch App',
+                showGlassEffect: true,
                 links: [
-                  { id: 'l1', label: 'Core', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
-                  { id: 'l2', label: 'System', type: 'anchor', value: 'DNA', typo: { useGlobal: true } }
+                  { id: 'l1', label: 'Features', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
+                  { id: 'l2', label: 'Solutions', type: 'anchor', value: 'B0301', typo: { useGlobal: true } },
+                  { id: 'l3', label: 'Architecture', type: 'anchor', value: 'B0501', typo: { useGlobal: true } },
+                  { id: 'l4', label: 'Contact', type: 'anchor', value: 'B1301', typo: { useGlobal: true } }
                 ]
               },
-              layout: { height: '70px', paddingX: '30', paddingY: '0', sticky: true, zIndex: 1000, variant: 'floating' },
-              style: { useGlobalDNA: true },
-              btnUseGlobal: true,
-              btnStyles: { size: "0.9", padX: "20", padY: "10", font: "11", stroke: "1", radius: "8", shadow: "false" },
-            },
-            'B0103': {
-              data: {
-                logo: 'MAGNETIC',
-                logoTypo: { useGlobal: true, fontSize: '20', fontWeight: '900', letterSpacing: '0.2', lineHeight: '1', uppercase: true },
-                showIcon: true, iconType: 'default', customIconUrl: '',
-                showActionButton: true, actionButtonText: 'Connect',
-                links: [
-                  { id: 'l1', label: 'Vision', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
-                  { id: 'l2', label: 'Nodes', type: 'anchor', value: 'DNA', typo: { useGlobal: true } }
-                ]
+              layout: { paddingX: '24', paddingY: '0', zIndex: 1000, variant: 'floating' },
+              style: {
+                backgroundColor: "rgba(15, 15, 15, 0.8)",
+                borderRadius: 50,
+                height: 72,
+                glassEffect: true,
+                positionX: 0,
+                positionY: 0,
+                button: {
+                  useGlobalDNA: false,
+                  scale: 1.0,
+                  paddingX: 24,
+                  paddingY: 12,
+                  fontSize: 14,
+                  fontWeight: 'bold'
+                }
               },
-              layout: { height: '80px', paddingX: '40', paddingY: '0', sticky: true, zIndex: 1000, variant: 'magnetic' },
-              style: { useGlobalDNA: true },
-              physics: { strength: '0.5', friction: '0.1' },
-              btnUseGlobal: true,
-              btnStyles: { size: "1.0", padX: "24", padY: "12", font: "12", stroke: "1", radius: "40", shadow: "false" },
+              animation: { useGlobal: true, entranceType: 'slide-down' }
             },
             'B0201': {
               data: {
@@ -938,10 +965,23 @@ export const useStore = create<GridState>()(
           defaults['SocialDock'] = defaults['B2401'];
           defaults['RadarChart'] = defaults['B2201']; // Re-mapping old diagnostic to review
 
+          const blockData = defaults[type] || {};
+
+          // Studio_v2_DNA: Inherit current global look during initialization
+          const gs = state.globalSettings;
+          // Studio_v2_DNA: Initialize local style as null (Inherit from Global)
+          if (!blockData.style) blockData.style = {};
+
+          // Property Inheritance Logic: Set to null to favor Global DNA fallback
+          blockData.style.backgroundPattern = null;
+          blockData.style.bgFill = null;
+          // Radius still sets a default as it's common to want a baseline
+          if (!blockData.style.borderRadius) blockData.style.borderRadius = `${gs['GL07'].params[0].value}px`;
+
           const newBlock: ContentBlock = {
             id: crypto.randomUUID(),
             type,
-            localOverrides: defaults[type] || {},
+            localOverrides: blockData,
             isVisible: true
           };
 
@@ -956,6 +996,7 @@ export const useStore = create<GridState>()(
       removeBlock: (id) => {
         get().takeHistorySnapshot();
         set(produce((state: GridState) => {
+          if (!state.pages[state.currentPage]) return;
           state.pages[state.currentPage] = state.pages[state.currentPage].filter(b => b.id !== id);
           state.contentBlocks = state.pages[state.currentPage];
           if (state.selectedBlockId === id) state.selectedBlockId = null;
@@ -994,7 +1035,7 @@ export const useStore = create<GridState>()(
         if (block) block.isVisible = !block.isVisible;
       })),
 
-      setSelectedBlock: (id) => set({ selectedBlockId: id, isBlockListOpen: false, isGlobalOpen: false }),
+      setSelectedBlock: (id) => set({ selectedBlockId: id, isBlockListOpen: false, isGlobalOpen: false, isThemePanelOpen: false }),
 
       updateBlockLocal: (id, path, value) => {
         get().takeHistorySnapshot();
@@ -1036,7 +1077,7 @@ export const useStore = create<GridState>()(
                 { id: 'l2', label: 'Open Project', type: 'url', value: 'https://google.com', typo: { useGlobal: true, fontSize: '14', fontWeight: '500', letterSpacing: '0', lineHeight: '1.2', uppercase: false } }
               ]
             },
-            layout: { height: '80px', paddingX: '40', paddingY: '0', sticky: true, zIndex: 1000 },
+            layout: { height: '80px', paddingX: '40', paddingY: '0', zIndex: 1000 },
             btnUseGlobal: true,
             btnStyles: { size: "1.0", padX: "24", padY: "12", font: "12", stroke: "1", radius: "4", shadow: "false" },
             animation: { useGlobal: true, entranceType: 'slide-down', stickyAnimation: true }

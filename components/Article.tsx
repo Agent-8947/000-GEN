@@ -36,8 +36,8 @@ export const Article: React.FC<{ id: string, localOverrides: any }> = ({ id, loc
     const containerStyle: React.CSSProperties = {
         paddingTop: `${layout.paddingY}px`,
         paddingBottom: `${layout.paddingY}px`,
-        backgroundColor: 'transparent',
-        color: gl02[3].value, // Text Prim
+        backgroundColor: overrides.style?.bgFill || 'transparent',
+        color: overrides.style?.titleColor || gl02[3].value, // Text Prim
         textAlign: layout.textAlign as any || 'left',
         fontFamily: style.useGlobalFont ? 'var(--dna-font-family)' : (style.fontFamily || 'var(--dna-font-family)'),
         lineHeight: style.lineHeight || gl01[2].value,

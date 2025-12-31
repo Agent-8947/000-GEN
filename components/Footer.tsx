@@ -10,7 +10,7 @@ export const Footer: React.FC<{ id: string, localOverrides: any }> = ({ id, loca
     const style = {
         paddingTop: (overrides.layout?.paddingTop || '80') + 'px',
         paddingBottom: (overrides.layout?.paddingBottom || '80') + 'px',
-        backgroundColor: overrides.style?.background || (uiTheme.lightPanel === 'transparent' ? '#F9FAFB' : 'transparent'),
+        backgroundColor: overrides.style?.bgFill || overrides.style?.background || (uiTheme.lightPanel === 'transparent' ? '#F9FAFB' : 'transparent'),
         color: overrides.style?.textColor || gl02[3].value,
         fontFamily: 'var(--dna-font-family)',
         borderTop: `1px solid ${gl02[5].value}20`

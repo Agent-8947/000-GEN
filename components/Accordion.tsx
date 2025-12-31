@@ -20,7 +20,7 @@ export const Accordion: React.FC<{ id: string, localOverrides: any }> = ({ id, l
             style={{
                 paddingTop: `${layout.paddingY}px`,
                 paddingBottom: `${layout.paddingY}px`,
-                backgroundColor: localOverrides.style?.background || 'transparent'
+                backgroundColor: localOverrides.style?.bgFill || localOverrides.style?.background || localOverrides.style?.backgroundColor || 'transparent'
             }}
         >
             <div className="mx-auto" style={{ maxWidth: `${layout.maxWidth}px` }}>
