@@ -113,9 +113,10 @@ export const ContentBlock: React.FC<{ id: string, type: string, localOverrides: 
     return (
         <motion.div
             id={id}
-            onClick={(e) => {
+            onDoubleClick={(e) => {
                 e.stopPropagation();
-                setSelectedBlock(id);
+                // Toggle: if already selected, deselect (close panel), otherwise select
+                setSelectedBlock(isSelected ? null : id);
             }}
             initial={false}
             animate={{

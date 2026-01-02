@@ -70,7 +70,17 @@ export const BlockList: React.FC = () => {
 
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
-  const toggleCategory = (cat: string) => setOpenCategories(p => ({ ...p, [cat]: !p[cat] }));
+  const toggleCategory = (cat: string) => {
+    setOpenCategories(prev => {
+      const isCurrentlyOpen = prev[cat];
+      // Close all categories and open only the clicked one (unless it was already open)
+      const newState: Record<string, boolean> = {};
+      if (!isCurrentlyOpen) {
+        newState[cat] = true;
+      }
+      return newState;
+    });
+  };
 
   const getGroupedBlocks = () => {
     const grouped: Record<string, typeof ALL_BLOCKS> = {};

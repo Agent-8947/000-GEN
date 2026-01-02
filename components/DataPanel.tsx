@@ -1,30 +1,30 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { X, Globe, FileCode } from 'lucide-react';
+import { X, Globe, FileCode, Upload } from 'lucide-react';
 
 export const DataPanel: React.FC = () => {
-  const { uiTheme, toggleDataPanel, exportProjectData } = useStore();
-  const [exporting, setExporting] = useState(false);
+    const { uiTheme, toggleDataPanel, exportProjectData, importProjectData } = useStore();
+    const [exporting, setExporting] = useState(false);
 
-  const handleExportProductionSite = async () => {
-    setExporting(true);
-    
-    try {
-      const dnaData = exportProjectData();
-      const state = JSON.parse(dnaData);
+    const handleExportProductionSite = async () => {
+        setExporting(true);
 
-      const getParam = (group: string, id: string) => 
-        state.globalSettings?.[group]?.params?.find((p: any) => p.id === id)?.value;
-      
-      const bgColor = getParam('GL02', 'P1') || '#09090B';
-      const textColor = getParam('GL02', 'P4') || '#FFFFFF';
-      const accentColor = getParam('GL02', 'P3') || '#3B82F6';
-      const fontFamily = getParam('GL01', 'P8') || 'Inter';
-      const containerWidth = getParam('GL03', 'P6') || '1200';
-      const radius = getParam('GL07', 'P1') || '8';
-      const isSticky = getParam('GL11', 'P1') === 'true';
+        try {
+            const dnaData = exportProjectData();
+            const state = JSON.parse(dnaData);
 
-      const htmlContent = `<!DOCTYPE html>
+            const getParam = (group: string, id: string) =>
+                state.globalSettings?.[group]?.params?.find((p: any) => p.id === id)?.value;
+
+            const bgColor = getParam('GL02', 'P1') || '#09090B';
+            const textColor = getParam('GL02', 'P4') || '#FFFFFF';
+            const accentColor = getParam('GL02', 'P3') || '#3B82F6';
+            const fontFamily = getParam('GL01', 'P8') || 'Inter';
+            const containerWidth = getParam('GL03', 'P6') || '1200';
+            const radius = getParam('GL07', 'P1') || '8';
+            const isSticky = getParam('GL11', 'P1') === 'true';
+
+            const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -353,51 +353,134 @@ export const DataPanel: React.FC = () => {
         };
 
         // ========================================
-        // B03 - FEATURES / SERVICES BLOCK
+        // B03 - SKILLS BLOCK
         // ========================================
-        const FeaturesBlock = ({ block, padding }) => {
-            const { data = {}, media = {} } = block.localOverrides || {};
-            const items = data.items || data.features || data.services || [];
+        const SkillsBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const groups = data.groups || [];
+            const isBento = layout.grid === 'bento';
             
             return (
                 <section className={padding + " border-b border-white/5"}>
                     <div className="container-dna">
-                        <div className="text-center mb-20 max-w-3xl mx-auto">
-                            <motion.h2 
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                className="text-4xl md:text-5xl font-black uppercase mb-6"
-                            >
-                                {data.title || "Features"}
-                            </motion.h2>
-                            {data.description && (
-                                <p className="text-lg opacity-50 leading-relaxed">
-                                    {data.description}
-                                </p>
-                            )}
-                        </div>
+                        {data.title && (
+                            <div className="text-center mb-20 max-w-3xl mx-auto">
+                                <motion.h2 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    className="text-4xl md:text-5xl font-black uppercase mb-6"
+                                >
+                                    {data.title}
+                                </motion.h2>
+                                {data.description && (
+                                    <p className="text-lg opacity-50 leading-relaxed">
+                                        {data.description}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {items.map((item, i) => (
-                                <motion.div 
+                        <div className={isBento ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "grid grid-cols-1 md:grid-cols-2 gap-12"}>
+                            {groups.map((group, i) => (
+                                <motion.div
                                     key={i}
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ delay: i * 0.1 }}
-                                    className="dna-card"
+                                    className={isBento ? "dna-card" : ""}
                                 >
-                                    <div className="mb-4 opacity-30 font-mono text-xs">
-                                        {String(i + 1).padStart(2, '0')}
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-4 uppercase text-[var(--dna-accent)]">
-                                        {item.title || item.header || "Feature"}
+                                    <h3 className="text-2xl font-black uppercase mb-8 text-[var(--dna-accent)]">
+                                        {group.title}
                                     </h3>
-                                    <p className="opacity-60 text-sm leading-relaxed">
-                                        {item.desc || item.content || item.text || "Feature description"}
-                                    </p>
+                                    
+                                    <div className="space-y-6">
+                                        {group.items?.map((skill, j) => (
+                                            <div key={j}>
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="font-bold text-sm uppercase tracking-wide">
+                                                        {skill.name}
+                                                    </span>
+                                                    <span className="text-sm opacity-50">
+                                                        {skill.level}%
+                                                    </span>
+                                                </div>
+                                                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        whileInView={{ width: \`\${skill.level}%\` }}
+                                                        viewport={{ once: true }}
+                                                        transition={{ duration: 1, delay: i * 0.1 + j * 0.05 }}
+                                                        className="h-full bg-[var(--dna-accent)] rounded-full"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </motion.div>
                             ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B04 - ARTICLE/TEXT BLOCK
+        // ========================================
+        const ArticleBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const sections = data.sections || [];
+            const hasIndex = sections.length > 0;
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        <div className="max-w-4xl mx-auto">
+                            {data.title && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: 1 }}
+                                    className="mb-12"
+                                >
+                                    <h2 className="text-4xl md:text-5xl font-black uppercase mb-4">
+                                        {data.title}
+                                    </h2>
+                                    {data.subtitle && (
+                                        <p className="text-xl opacity-50 uppercase tracking-[0.2em]">
+                                            {data.subtitle}
+                                        </p>
+                                    )}
+                                </motion.div>
+                            )}
+                            
+                            {data.body && (
+                                <div className="text-lg opacity-80 leading-relaxed mb-12">
+                                    {data.body}
+                                </div>
+                            )}
+                            
+                            {hasIndex && (
+                                <div className="space-y-8">
+                                    {sections.map((section, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: i * 0.1 }}
+                                            className="dna-card"
+                                        >
+                                            <h3 className="text-2xl font-bold mb-4 text-[var(--dna-accent)]">
+                                                {section.title}
+                                            </h3>
+                                            <p className="opacity-70 leading-relaxed">
+                                                {section.content}
+                                            </p>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -449,51 +532,101 @@ export const DataPanel: React.FC = () => {
         };
 
         // ========================================
-        // B05 - TESTIMONIALS BLOCK
+        // B05 - PORTFOLIO/GALLERY BLOCK
         // ========================================
-        const TestimonialsBlock = ({ block, padding }) => {
-            const { data = {} } = block.localOverrides || {};
-            const testimonials = data.testimonials || data.reviews || data.items || [];
+        const PortfolioBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const items = data.items || [];
+            const columns = layout.columns || '3';
             
             return (
                 <section className={padding + " border-b border-white/5"}>
                     <div className="container-dna">
-                        <div className="text-center mb-16">
-                            <motion.h2 
-                                initial={{ opacity: 0 }}
-                                whileInView={{ opacity: 1 }}
-                                className="text-4xl md:text-5xl font-black uppercase mb-6"
-                            >
-                                {data.title || "Testimonials"}
-                            </motion.h2>
-                        </div>
+                        {data.title && (
+                            <div className="text-center mb-16">
+                                <motion.h2 
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: 1 }}
+                                    className="text-4xl md:text-5xl font-black uppercase mb-6"
+                                >
+                                    {data.title || "Portfolio"}
+                                </motion.h2>
+                                {data.description && (
+                                    <p className="text-lg opacity-50">{data.description}</p>
+                                )}
+                            </div>
+                        )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {testimonials.map((item, i) => (
+                        <div className={\`grid grid-cols-1 md:grid-cols-\${columns === 'masonry' ? '2' : columns} gap-6\`}>
+                            {items.map((item, i) => (
                                 <motion.div
                                     key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
-                                    className="testimonial-card"
+                                    transition={{ delay: i * 0.1 }}
+                                    className="group cursor-pointer"
                                 >
-                                    <p className="mb-6 opacity-70 italic leading-relaxed">
-                                        "{item.text || item.content || item.quote}"
-                                    </p>
-                                    <div className="flex items-center gap-4">
-                                        {item.avatar && (
-                                            <div className="testimonial-avatar">
-                                                <img src={item.avatar} alt={item.name} />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <div className="font-bold text-[var(--dna-accent)]">
-                                                {item.name || "Anonymous"}
-                                            </div>
-                                            <div className="text-sm opacity-50">
-                                                {item.role || item.position || "Customer"}
-                                            </div>
+                                    <ImageRenderer 
+                                        src={item.url || item.src || item.imageUrl} 
+                                        shape="landscape"
+                                    />
+                                    {item.title && (
+                                        <div className="mt-4 text-center">
+                                            <h3 className="font-bold text-lg uppercase tracking-wide group-hover:text-[var(--dna-accent)] transition-colors">
+                                                {item.title}
+                                            </h3>
                                         </div>
+                                    )}
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B06 - TIMELINE BLOCK
+        // ========================================
+        const TimelineBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const items = data.items || [];
+            const isHorizontal = layout.scrollPath === 'horizontal';
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        {data.title && (
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-black uppercase">
+                                    {data.title}
+                                </h2>
+                            </div>
+                        )}
+                        
+                        <div className={isHorizontal ? "flex gap-12 overflow-x-auto pb-8" : "space-y-12 max-w-3xl mx-auto"}>
+                            {items.map((item, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, x: isHorizontal ? 30 : 0, y: isHorizontal ? 0 : 20 }}
+                                    whileInView={{ opacity: 1, x: 0, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className={isHorizontal ? "min-w-[300px]" : "flex gap-8"}
+                                >
+                                    <div className={isHorizontal ? "mb-4" : "flex-shrink-0"}>
+                                        <div className="text-2xl font-black text-[var(--dna-accent)]">
+                                            {item.date || item.year}
+                                        </div>
+                                    </div>
+                                    <div className={isHorizontal ? "" : "flex-1"}>
+                                        <h3 className="text-xl font-bold mb-2 uppercase">
+                                            {item.title}
+                                        </h3>
+                                        <p className="opacity-60 leading-relaxed">
+                                            {item.desc || item.description || item.content}
+                                        </p>
                                     </div>
                                 </motion.div>
                             ))}
@@ -548,7 +681,185 @@ export const DataPanel: React.FC = () => {
         };
 
         // ========================================
-        // B07 - FOOTER BLOCK
+        // B07 - ACCORDION/FAQ BLOCK
+        // ========================================
+        const AccordionBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            const items = data.items || [];
+            const [openIndex, setOpenIndex] = useState(null);
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna max-w-4xl mx-auto">
+                        <div className="text-center mb-16">
+                            <motion.h2 
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                className="text-4xl md:text-5xl font-black uppercase mb-6"
+                            >
+                                {data.title || "FAQ"}
+                            </motion.h2>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {items.map((item, i) => (
+                                <div key={i} className="dna-card overflow-hidden">
+                                    <button 
+                                        onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                                        className="w-full text-left p-6 flex justify-between items-center gap-4"
+                                    >
+                                        <span className="font-bold text-lg">{item.question || item.title}</span>
+                                        <span className="text-2xl">{openIndex === i ? '−' : '+'}</span>
+                                    </button>
+                                    {openIndex === i && (
+                                        <div className="px-6 pb-6 opacity-70 leading-relaxed">
+                                            {item.answer || item.content}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B08 - STATS BLOCK
+        // ========================================
+        const StatsBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const stats = data.stats || data.items || [];
+            const columns = layout.columns || '3';
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        <div className={\`grid grid-cols-1 md:grid-cols-\${columns} gap-12\`}>
+                            {stats.map((stat, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="text-center"
+                                >
+                                    <div className="text-5xl md:text-7xl font-black text-[var(--dna-accent)] mb-4">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-sm uppercase tracking-[0.2em] opacity-50">
+                                        {stat.label}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B09 - SPACER BLOCK
+        // ========================================
+        const SpacerBlock = ({ block }) => {
+            const { layout = {} } = block.localOverrides || {};
+            const height = layout.height || '120';
+            
+            return <div style={{ height: \`\${height}px\` }} />;
+        };
+
+        // ========================================
+        // B10 - TABS BLOCK
+        // ========================================
+        const TabsBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            const tabs = data.tabs || data.items || [];
+            const [activeTab, setActiveTab] = useState(0);
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna max-w-5xl mx-auto">
+                        <div className="flex gap-2 mb-12 border-b border-white/10 overflow-x-auto">
+                            {tabs.map((tab, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setActiveTab(i)}
+                                    className={\`px-6 py-4 font-bold uppercase text-sm tracking-[0.1em] transition-all \${
+                                        activeTab === i 
+                                            ? 'border-b-2 border-[var(--dna-accent)] text-[var(--dna-accent)]' 
+                                            : 'opacity-50 hover:opacity-100'
+                                    }\`}
+                                >
+                                    {tab.label || tab.title}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-8 dna-card"
+                        >
+                            <div className="text-lg opacity-80 leading-relaxed">
+                                {tabs[activeTab]?.content || tabs[activeTab]?.text}
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B13 - CONTACT FORM BLOCK
+        // ========================================
+        const ContactFormBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna max-w-2xl mx-auto">
+                        <div className="text-center mb-12">
+                            <motion.h2 
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                className="text-4xl md:text-5xl font-black uppercase mb-4"
+                            >
+                                {data.title || "Contact"}
+                            </motion.h2>
+                            {data.subtitle && (
+                                <p className="opacity-60">{data.subtitle}</p>
+                            )}
+                        </div>
+                        
+                        <form className="space-y-6">
+                            <input 
+                                type="text" 
+                                placeholder="Name" 
+                                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-lg focus:border-[var(--dna-accent)] outline-none transition-colors"
+                            />
+                            <input 
+                                type="email" 
+                                placeholder="Email" 
+                                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-lg focus:border-[var(--dna-accent)] outline-none transition-colors"
+                            />
+                            <textarea 
+                                placeholder="Message" 
+                                rows="6"
+                                className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-lg focus:border-[var(--dna-accent)] outline-none transition-colors resize-none"
+                            />
+                            <button type="submit" className="btn-primary w-full">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B14 - FOOTER BLOCK
         // ========================================
         const FooterBlock = ({ block }) => {
             const { data = {} } = block.localOverrides || {};
@@ -582,6 +893,179 @@ export const DataPanel: React.FC = () => {
                         </div>
                     </div>
                 </footer>
+            );
+        };
+
+        // ========================================
+        // B15 - BADGES BLOCK
+        // ========================================
+        const BadgesBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            const tags = data.tags || data.badges || data.items || [];
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            {tags.map((tag, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="px-6 py-2 bg-[var(--dna-accent)]/10 border border-[var(--dna-accent)]/20 rounded-full text-sm font-bold uppercase tracking-[0.1em] text-[var(--dna-accent)]"
+                                >
+                                    {tag.name || tag.label || tag}
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B16 - PREVIEW/DEVICE MOCKUP BLOCK
+        // ========================================
+        const PreviewBlock = ({ block, padding }) => {
+            const { data = {}, media = {} } = block.localOverrides || {};
+            const previewUrl = data.previewUrl || data.url || media.imageUrl;
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        {data.title && (
+                            <div className="text-center mb-12">
+                                <h2 className="text-4xl font-black uppercase">{data.title}</h2>
+                            </div>
+                        )}
+                        
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="max-w-5xl mx-auto"
+                        >
+                            <ImageRenderer src={previewUrl} shape="wide" />
+                        </motion.div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B21 - LOGOS BLOCK
+        // ========================================
+        const LogosBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            const items = data.items || data.logos || [];
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        <div className="flex flex-wrap items-center justify-center gap-12 opacity-40">
+                            {items.map((item, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0 }}
+                                    whileInView={{ opacity: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="text-2xl font-black uppercase tracking-wider hover:opacity-100 transition-opacity"
+                                >
+                                    {item.name || item.label || item}
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B22 - TESTIMONIALS/REVIEWS BLOCK (Enhanced)
+        // ========================================
+        const ReviewsBlock = ({ block, padding }) => {
+            const { data = {}, layout = {} } = block.localOverrides || {};
+            const items = data.items || data.testimonials || data.reviews || [];
+            const columns = layout.columns || '2';
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        {data.title && (
+                            <div className="text-center mb-16">
+                                <h2 className="text-4xl md:text-5xl font-black uppercase">
+                                    {data.title}
+                                </h2>
+                            </div>
+                        )}
+                        
+                        <div className={\`grid grid-cols-1 md:grid-cols-\${columns} gap-8\`}>
+                            {items.map((item, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    className="testimonial-card"
+                                >
+                                    <p className="mb-6 opacity-70 italic leading-relaxed text-lg">
+                                        "{item.quote || item.text || item.content}"
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        {item.avatar && (
+                                            <div className="testimonial-avatar">
+                                                <img src={item.avatar} alt={item.name} />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <div className="font-bold text-[var(--dna-accent)]">
+                                                {item.name || "Anonymous"}
+                                            </div>
+                                            <div className="text-sm opacity-50">
+                                                {item.role || item.position || "Customer"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        // ========================================
+        // B24 - SOCIAL DOCK BLOCK
+        // ========================================
+        const SocialDockBlock = ({ block, padding }) => {
+            const { data = {} } = block.localOverrides || {};
+            const socials = data.socials || data.links || data.items || [];
+            
+            return (
+                <section className={padding + " border-b border-white/5"}>
+                    <div className="container-dna">
+                        <div className="flex gap-6 justify-center">
+                            {socials.map((social, i) => (
+                                <motion.a
+                                    key={i}
+                                    href={social.url || '#'}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[var(--dna-accent)] hover:border-[var(--dna-accent)] transition-all"
+                                >
+                                    <span className="text-sm font-bold">
+                                        {social.icon || social.name?.charAt(0) || '•'}
+                                    </span>
+                                </motion.a>
+                            ))}
+                        </div>
+                    </div>
+                </section>
             );
         };
 
@@ -677,19 +1161,49 @@ export const DataPanel: React.FC = () => {
                 return <HeroBlock block={block} padding={padding} />;
             }
             if (type.startsWith('B03')) {
-                return <FeaturesBlock block={block} padding={padding} />;
+                return <SkillsBlock block={block} padding={padding} />;
             }
             if (type.startsWith('B04')) {
-                return <GalleryBlock block={block} padding={padding} />;
+                return <ArticleBlock block={block} padding={padding} />;
             }
             if (type.startsWith('B05')) {
-                return <TestimonialsBlock block={block} padding={padding} />;
+                return <PortfolioBlock block={block} padding={padding} />;
             }
             if (type.startsWith('B06')) {
-                return <CTABlock block={block} padding={padding} />;
+                return <TimelineBlock block={block} padding={padding} />;
             }
             if (type.startsWith('B07')) {
+                return <AccordionBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B08')) {
+                return <StatsBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B09')) {
+                return <SpacerBlock block={block} />;
+            }
+            if (type.startsWith('B10')) {
+                return <TabsBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B13')) {
+                return <ContactFormBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B14')) {
                 return <FooterBlock block={block} />;
+            }
+            if (type.startsWith('B15')) {
+                return <BadgesBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B16')) {
+                return <PreviewBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B21')) {
+                return <LogosBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B22')) {
+                return <ReviewsBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B24')) {
+                return <SocialDockBlock block={block} padding={padding} />;
             }
             
             // Fallback to universal block
@@ -735,88 +1249,126 @@ export const DataPanel: React.FC = () => {
 </body>
 </html>`;
 
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'index.html';
-      a.click();
-      URL.revokeObjectURL(url);
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            a.click();
+            URL.revokeObjectURL(url);
 
-      setTimeout(() => alert('✅ Site exported successfully!'), 500);
+            setTimeout(() => alert('✅ Site exported successfully!'), 500);
 
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('❌ Export failed. Check console.');
-    } finally {
-      setExporting(false);
-    }
-  };
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('❌ Export failed. Check console.');
+        } finally {
+            setExporting(false);
+        }
+    };
 
-  const handleExportJSON = () => {
-    try {
-      const dnaData = exportProjectData();
-      const blob = new Blob([dnaData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'dna-project.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      alert('Failed to export JSON');
-    }
-  };
+    const handleExportJSON = () => {
+        try {
+            const dnaData = exportProjectData();
+            const blob = new Blob([dnaData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dna-project.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            alert('Failed to export JSON');
+        }
+    };
 
-  return (
-    <div className="w-[360px] h-full border-l flex flex-col" style={{ backgroundColor: uiTheme.lightPanel }}>
-      <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements }}>
-        <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Production Hub</span>
-        <button onClick={toggleDataPanel} className="opacity-20 hover:opacity-100 transition-opacity">
-          <X size={18} />
-        </button>
-      </div>
+    const handleImportJSON = () => {
+        try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e: Event) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (!file) return;
 
-      <div className="p-8 flex-1 space-y-4">
-        <button 
-          onClick={handleExportProductionSite}
-          disabled={exporting}
-          className="w-full p-12 bg-blue-500/10 border-2 border-blue-500/20 rounded-[40px] flex flex-col items-center gap-6 hover:bg-blue-500/20 transition-all group disabled:opacity-50"
-        >
-          <Globe size={48} className="text-blue-500 group-hover:scale-110 transition-transform" />
-          <div className="text-center">
-            <div className="text-[14px] font-black uppercase text-blue-500 tracking-[0.2em]">
-              {exporting ? 'Exporting...' : 'Export HTML Site'}
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const json = event.target?.result as string;
+                        importProjectData(json);
+                        alert('✅ Project imported successfully!');
+                    } catch (error) {
+                        alert('❌ Failed to import JSON. Invalid file format.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        } catch (error) {
+            alert('Failed to import JSON');
+        }
+    };
+
+    return (
+        <div className="w-[360px] h-full border-l flex flex-col" style={{ backgroundColor: uiTheme.lightPanel }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements }}>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Production Hub</span>
+                <button onClick={toggleDataPanel} className="opacity-20 hover:opacity-100 transition-opacity">
+                    <X size={18} />
+                </button>
             </div>
-            <div className="text-[8px] opacity-40 uppercase mt-2">Universal v25.0</div>
-          </div>
-        </button>
 
-        <button 
-          onClick={handleExportJSON}
-          className="w-full p-8 bg-green-500/10 border-2 border-green-500/20 rounded-[24px] flex items-center gap-4 hover:bg-green-500/20 transition-all"
-        >
-          <FileCode size={32} className="text-green-500" />
-          <div className="text-left flex-1">
-            <div className="text-[12px] font-bold text-green-500 uppercase">Export JSON</div>
-            <div className="text-[8px] opacity-40 mt-1">Project data</div>
-          </div>
-        </button>
+            <div className="p-8 flex-1 space-y-4">
+                <button
+                    onClick={handleExportProductionSite}
+                    disabled={exporting}
+                    className="w-full p-12 bg-blue-500/10 border-2 border-blue-500/20 rounded-[40px] flex flex-col items-center gap-6 hover:bg-blue-500/20 transition-all group disabled:opacity-50"
+                >
+                    <Globe size={48} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                    <div className="text-center">
+                        <div className="text-[14px] font-black uppercase text-blue-500 tracking-[0.2em]">
+                            {exporting ? 'Exporting...' : 'Export HTML Site'}
+                        </div>
+                        <div className="text-[8px] opacity-40 uppercase mt-2">Universal v25.0</div>
+                    </div>
+                </button>
 
-        <div className="mt-8 p-4 bg-white/5 rounded-lg">
-          <div className="text-[10px] font-bold uppercase mb-2 text-green-400">✅ Supported Blocks:</div>
-          <ul className="text-[9px] opacity-60 space-y-1 leading-relaxed">
-            <li>• B01 - Navbar</li>
-            <li>• B02 - Hero</li>
-            <li>• B03 - Features/Services</li>
-            <li>• B04 - Gallery</li>
-            <li>• B05 - Testimonials</li>
-            <li>• B06 - CTA</li>
-            <li>• B07 - Footer</li>
-            <li>• Universal fallback</li>
-          </ul>
+                <button
+                    onClick={handleExportJSON}
+                    className="w-full p-8 bg-green-500/10 border-2 border-green-500/20 rounded-[24px] flex items-center gap-4 hover:bg-green-500/20 transition-all"
+                >
+                    <FileCode size={32} className="text-green-500" />
+                    <div className="text-left flex-1">
+                        <div className="text-[12px] font-bold text-green-500 uppercase">Export JSON</div>
+                        <div className="text-[8px] opacity-40 mt-1">Project data</div>
+                    </div>
+                </button>
+
+                <button
+                    onClick={handleImportJSON}
+                    className="w-full p-8 bg-purple-500/10 border-2 border-purple-500/20 rounded-[24px] flex items-center gap-4 hover:bg-purple-500/20 transition-all"
+                >
+                    <Upload size={32} className="text-purple-500" />
+                    <div className="text-left flex-1">
+                        <div className="text-[12px] font-bold text-purple-500 uppercase">Import JSON</div>
+                        <div className="text-[8px] opacity-40 mt-1">Load project</div>
+                    </div>
+                </button>
+
+                <div className="mt-8 p-4 bg-white/5 rounded-lg">
+                    <div className="text-[10px] font-bold uppercase mb-2 text-green-400">✅ Supported Blocks:</div>
+                    <ul className="text-[9px] opacity-60 space-y-1 leading-relaxed">
+                        <li>• B01 - Navbar</li>
+                        <li>• B02 - Hero</li>
+                        <li>• B03 - Features/Services</li>
+                        <li>• B04 - Gallery</li>
+                        <li>• B05 - Testimonials</li>
+                        <li>• B06 - CTA</li>
+                        <li>• B07 - Footer</li>
+                        <li>• Universal fallback</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
