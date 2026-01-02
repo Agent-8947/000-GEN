@@ -20,7 +20,7 @@ const ParameterRow: React.FC<{ glId: string; param: DNAParameter }> = ({ glId, p
     const g = parseInt(hexColor.substr(3, 2), 16);
     const b = parseInt(hexColor.substr(5, 2), 16);
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-    return yiq >= 128 ? '#000000' : '#FFFFFF';
+    return yiq >= 136 ? '#000000' : '#FFFFFF';
   };
   const textColor = param.type === 'color' ? getContrastColor(param.value) : undefined;
 

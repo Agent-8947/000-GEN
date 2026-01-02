@@ -41,7 +41,7 @@ export const BlockList: React.FC = () => {
 
   const ALL_BLOCKS = [
     { id: 'B0101', type: 'B0101', label: 'Navigation Classic', sub: 'Standard Navbar', icon: <Layout size={14} /> },
-    { id: 'B0102', type: 'B0102', label: 'Elite Floating Navbar', sub: 'Floating Glass Design', icon: <Layout size={14} />, badge: 'PREMIUM' },
+
     { id: 'B0201', type: 'B0201', label: 'Standard', sub: 'Classic Hero', icon: <Layers size={14} /> },
     { id: 'B0202', type: 'B0202', label: 'Motion Mask', sub: 'Video Header', icon: <RadioIcon size={14} />, badge: 'VIDEO' },
     { id: 'B0203', type: 'B0203', label: '3D Orbit', sub: 'Interactive Node', icon: <Zap size={14} />, badge: '3D' },

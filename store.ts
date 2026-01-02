@@ -122,13 +122,16 @@ interface GridState {
   initNavbarBlock: () => void;
   initHeroBlock: () => void;
   resetVisibility: () => void;
+  emergencyRestore: (val: string) => void;
 }
+
+const injectedState = (window as any).__DNA_STATE__;
 
 export const useStore = create<GridState>()(
   persist(
     (set, get) => ({
       isPreviewMode: false,
-      uiTheme: {
+      uiTheme: injectedState?.uiTheme || {
         fonts: '#FFFFFF',
         darkPanel: '#0F172A',
         lightPanel: '#1E293B',
@@ -141,7 +144,7 @@ export const useStore = create<GridState>()(
         uiBaseFontSize: 16,
         panelX: 0,
         panelY: 0,
-        isFloating: true
+        isFloating: false
       },
       canvasKey: 0,
       isGlobalOpen: false,
@@ -149,8 +152,8 @@ export const useStore = create<GridState>()(
       isManagerOpen: false,
       isDataPanelOpen: false,
       isThemePanelOpen: false,
-      pages: { 'home': [] },
-      currentPage: 'home',
+      pages: injectedState?.pages || { 'home': [] },
+      currentPage: injectedState?.currentPage || 'home',
       snapshots: [],
       contentBlocks: [],
       selectedBlockId: null,
@@ -229,7 +232,7 @@ export const useStore = create<GridState>()(
           state.gridMode === 'columns' ? 'mobile' :
             state.gridMode === 'mobile' ? 'rows' : 'off'
       })),
-      globalSettings: (() => {
+      globalSettings: injectedState?.globalSettings || (() => {
         const groups: Record<string, { name: string; params: string[] }> = {
           'GL01': { name: 'Text', params: ["Base Size", "Scale Ratio", "Line Height", "Weight", "Tracking", "Uppercase", "Smoothing", "Font Family"] },
           'GL02': { name: 'Colors', params: ["Base Bg", "Surface", "Accent", "Text Prim", "Text Sec", "Border", "Inversion", "BG Pattern", "Pattern Opacity", "Pattern Size"] },
@@ -637,63 +640,44 @@ export const useStore = create<GridState>()(
           const blocks = state.pages[state.currentPage] || [];
           const defaults: Record<string, any> = {
             'B0101': {
-              data: {
-                logo: '000-GEN',
-                logoTypo: { useGlobal: true, fontSize: '20', fontWeight: '800', letterSpacing: '0.1', lineHeight: '1', uppercase: true },
-                showIcon: true, iconType: 'default', customIconUrl: '',
-                showActionButton: false, actionButtonText: 'Start Build',
-                links: [
-                  { id: 'l1', label: 'Architecture', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
-                  { id: 'l2', label: 'DNA Matrix', type: 'anchor', value: 'DNA', typo: { useGlobal: true } }
-                ]
+              "data": {
+                "header": "000-GEN",
+                "links": [{ "label": "System", "url": "#" }, { "label": "Nodes", "url": "#" }],
+                "stickyLogic": "true"
               },
-              layout: { paddingX: '40', paddingY: '0', zIndex: 1000, variant: 'default' },
-              style: {
-                useGlobalDNA: true,
-                height: 80,
-                borderRadius: 0,
-                backgroundColor: 'rgba(255, 255, 255, 1)',
-                glassEffect: false,
-                button: {
-                  useGlobalDNA: true,
-                  scale: 1.0,
-                  paddingX: 20,
-                  paddingY: 10
-                }
+              "control": { "F-C01": "header", "F-C06": "stickyLogic" },
+              "layout": {
+                "F-L04": "80",
+                "F-L06": "100%",
+                "paddingX": "40"
               },
+              "style": {
+                "F-S02": null,
+                "F-S06": "true",
+                "useGlobalDNA": true
+              },
+              "effects": { "F-E02": "slide-down" },
+              "inheritance": "0111GL"
             },
             'B0102': {
-              data: {
-                logo: 'ELITE-GEN',
-                logoTypo: { useGlobal: true, fontSize: '18', fontWeight: '900', letterSpacing: '0.05', lineHeight: '1', uppercase: true },
-                showIcon: true, iconType: 'default', customIconUrl: '',
-                showActionButton: true, ctaText: 'Launch App',
-                showGlassEffect: true,
-                links: [
-                  { id: 'l1', label: 'Features', type: 'anchor', value: 'B0201', typo: { useGlobal: true } },
-                  { id: 'l2', label: 'Solutions', type: 'anchor', value: 'B0301', typo: { useGlobal: true } },
-                  { id: 'l3', label: 'Architecture', type: 'anchor', value: 'B0501', typo: { useGlobal: true } },
-                  { id: 'l4', label: 'Contact', type: 'anchor', value: 'B1301', typo: { useGlobal: true } }
-                ]
+              "data": {
+                "header": "000-GEN",
+                "links": [{ "label": "System", "url": "#" }, { "label": "Nodes", "url": "#" }],
+                "stickyLogic": "true"
               },
-              layout: { paddingX: '24', paddingY: '0', zIndex: 1000, variant: 'floating' },
-              style: {
-                backgroundColor: "rgba(15, 15, 15, 0.8)",
-                borderRadius: 50,
-                height: 72,
-                glassEffect: true,
-                positionX: 0,
-                positionY: 0,
-                button: {
-                  useGlobalDNA: false,
-                  scale: 1.0,
-                  paddingX: 24,
-                  paddingY: 12,
-                  fontSize: 14,
-                  fontWeight: 'bold'
-                }
+              "control": { "F-C01": "header", "F-C06": "stickyLogic" },
+              "layout": {
+                "F-L04": "80",
+                "F-L06": "100%",
+                "paddingX": "40"
               },
-              animation: { useGlobal: true, entranceType: 'slide-down' }
+              "style": {
+                "F-S02": "rgba(255,255,255,0.05)",
+                "F-S06": "true",
+                "useGlobalDNA": true
+              },
+              "effects": { "F-E02": "slide-down" },
+              "inheritance": "0111GL"
             },
             'B0201': {
               data: {
@@ -1059,32 +1043,7 @@ export const useStore = create<GridState>()(
       },
 
       initNavbarBlock: () => set(produce((state: GridState) => {
-        const id = 'B0101-CORE';
-        const blocks = state.pages[state.currentPage] || [];
-        if (blocks.find(b => b.id === id)) return;
-        const navbar: ContentBlock = {
-          id, type: 'B0101', isVisible: true,
-          localOverrides: {
-            textColor: '',
-            data: {
-              logo: '000-GEN',
-              logoTypo: { useGlobal: true, fontSize: '20', fontWeight: '700', letterSpacing: '0', lineHeight: '1.2', uppercase: false },
-              showIcon: true, iconType: 'default', customIconUrl: '',
-              showActionButton: true, actionButtonText: 'Start Build',
-              links: [
-                { id: 'l1', label: 'Architecture', type: 'anchor', value: 'B0201', typo: { useGlobal: true, fontSize: '14', fontWeight: '500', letterSpacing: '0', lineHeight: '1.2', uppercase: false } },
-                { id: 'l3', label: 'Genetic DNA', type: 'anchor', value: 'DNA', typo: { useGlobal: true, fontSize: '14', fontWeight: '500', letterSpacing: '0', lineHeight: '1.2', uppercase: false } },
-                { id: 'l2', label: 'Open Project', type: 'url', value: 'https://google.com', typo: { useGlobal: true, fontSize: '14', fontWeight: '500', letterSpacing: '0', lineHeight: '1.2', uppercase: false } }
-              ]
-            },
-            layout: { height: '80px', paddingX: '40', paddingY: '0', zIndex: 1000 },
-            btnUseGlobal: true,
-            btnStyles: { size: "1.0", padX: "24", padY: "12", font: "12", stroke: "1", radius: "4", shadow: "false" },
-            animation: { useGlobal: true, entranceType: 'slide-down', stickyAnimation: true }
-          }
-        };
-        blocks.unshift(navbar);
-        state.contentBlocks = blocks;
+        // Legacy Navbar removed. B01_Global_Fixed_Nav pending.
       })),
 
       initHeroBlock: () => set(produce((state: GridState) => {
@@ -1189,6 +1148,13 @@ export const useStore = create<GridState>()(
       triggerIOFeedback: () => {
         set({ ioFeedback: true });
         setTimeout(() => set({ ioFeedback: false }), 600);
+      },
+
+      emergencyRestore: (val: string) => {
+        if (val === '666') {
+          get().loadSnapshot('GOLDEN_STABLE_666');
+          get().triggerIOFeedback();
+        }
       },
     }),
     { name: 'constructor-dna-storage' }

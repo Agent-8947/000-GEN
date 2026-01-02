@@ -106,6 +106,10 @@ export const ContentBlock: React.FC<{ id: string, type: string, localOverrides: 
         }
     };
 
+    const isNavbar = type === 'B0101' || type === 'B0102' || type === 'Navbar';
+    const stickySetting = localOverrides.data?.stickyLogic === 'true' || globalSettings['GL11']?.params[0]?.value === 'true';
+    const isSticky = isNavbar && stickySetting;
+
     return (
         <motion.div
             id={id}
@@ -115,10 +119,13 @@ export const ContentBlock: React.FC<{ id: string, type: string, localOverrides: 
             }}
             initial={false}
             animate={{
-                zIndex: isSelected ? 20 : 0
+                zIndex: isSticky ? 1000 : (isSelected ? 20 : 0)
             }}
             transition={{ duration: 0.2 }}
             style={{
+                position: isSticky ? 'sticky' : 'relative',
+                top: isSticky ? 0 : undefined,
+                color: localOverrides.style?.textColor,
                 backgroundColor: localOverrides.background?.lockBackground && localOverrides.background?.fixedColor
                     ? localOverrides.background.fixedColor
                     : (localOverrides.style?.bgFill || localOverrides.style?.background || localOverrides.style?.backgroundColor || 'transparent')

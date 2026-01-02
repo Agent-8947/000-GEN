@@ -86,7 +86,7 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             textTransform: gl01[5].value === 'true' ? 'uppercase' as const : 'none' as const,
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
-        color: overrides.style?.titleColor || gl02[3].value,
+        color: overrides.style?.titleColor || overrides.style?.textColor || gl02[3].value,
         fontFamily: 'var(--dna-font-family)'
     };
 
@@ -99,7 +99,7 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             textTransform: 'none' as const,
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
-        color: overrides.style?.descColor || gl02[4].value,
+        color: overrides.style?.descColor || overrides.style?.textColor || gl02[4].value,
         fontFamily: 'var(--dna-font-family)'
     };
 

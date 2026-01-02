@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore, UI_THEME_PRESETS } from '../store';
-import { 
-  Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus, 
-  ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload, 
-  Eye, Ban, Undo2, Redo2, Monitor, Smartphone, Grid3X3, Settings 
+import {
+  Sun, Moon, ArrowLeftRight, RefreshCcw, X, Type, Layout, Palette, Zap, Plus,
+  ArrowUp, ArrowDown, ExternalLink, Anchor, Trash2, Image as ImageIcon, Upload,
+  Eye, Ban, Undo2, Redo2, Monitor, Smartphone, Grid3X3, Settings
 } from 'lucide-react';
 
 // --- Local Controller Components ---
@@ -165,52 +165,130 @@ const ColorPicker: React.FC<{
   const isInherited = value === null || value === undefined;
   const displayColor = isInherited ? defaultValue : value;
 
+  // Helper to get hex and alpha from various formats
+  const parseColor = (c: string = '#ffffff') => {
+    let hex = '#ffffff';
+    let alpha = 1;
+
+    if (c.startsWith('#')) {
+      hex = c.slice(0, 7);
+      if (c.length === 9) {
+        // Hex with alpha #RRGGBBAA
+        const aHex = c.slice(7, 9);
+        alpha = parseInt(aHex, 16) / 255;
+      }
+    } else if (c.startsWith('rgba')) {
+      const parts = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      if (parts) {
+        const r = parseInt(parts[1]).toString(16).padStart(2, '0');
+        const g = parseInt(parts[2]).toString(16).padStart(2, '0');
+        const b = parseInt(parts[3]).toString(16).padStart(2, '0');
+        hex = `#${r}${g}${b}`;
+        alpha = parts[4] ? parseFloat(parts[4]) : 1;
+      }
+    }
+    return { hex, alpha };
+  };
+
+  const { hex, alpha } = parseColor(displayColor);
+
+  const updateColor = (newHex: string, newAlpha: number) => {
+    // Convert back to rgba for consistency with CSS
+    const r = parseInt(newHex.slice(1, 3), 16);
+    const g = parseInt(newHex.slice(3, 5), 16);
+    const b = parseInt(newHex.slice(5, 7), 16);
+    onChange(`rgba(${r},${g},${b},${newAlpha.toFixed(2)})`);
+  };
+
   return (
-    <div className="flex items-center justify-between py-2 group/color">
-      <span className="text-xs font-medium opacity-50 group-hover/color:opacity-100 transition-opacity">{label}</span>
-      <div className="flex items-center gap-3">
-        <div className="relative flex items-center gap-2">
-          {!isInherited && (
-            <button
-              onClick={() => onChange(null)}
-              className="p-1 hover:text-red-500 opacity-30 hover:opacity-100 transition-opacity"
-              title="Reset to Global"
-            >
-              <Ban size={14} />
-            </button>
-          )}
-          <div className="relative">
-            <input
-              type="color"
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-              value={displayColor || '#ffffff'}
-              onChange={(e) => onChange(e.target.value)}
-            />
-            <div
-              className={`w-6 h-6 rounded-full border border-black/10 flex items-center justify-center overflow-hidden transition-all ${isInherited ? 'opacity-40 grayscale' : 'shadow-sm'}`}
-              style={{ backgroundColor: displayColor || 'transparent' }}
-            >
-              {isInherited && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-[1px] bg-red-500/40 rotate-45" />
-                </div>
-              )}
+    <div className="flex flex-col gap-2 py-2 group/color">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium opacity-50 group-hover/color:opacity-100 transition-opacity">{label}</span>
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-2">
+            {!isInherited && (
+              <button
+                onClick={() => onChange(null)}
+                className="p-1 hover:text-red-500 opacity-30 hover:opacity-100 transition-opacity"
+                title="Reset to Global"
+              >
+                <Ban size={14} />
+              </button>
+            )}
+            <div className="relative">
+              <input
+                type="color"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                value={hex}
+                onChange={(e) => updateColor(e.target.value, alpha)}
+              />
+              <div
+                className={`w-6 h-6 rounded-full border border-black/10 flex items-center justify-center overflow-hidden transition-all ${isInherited ? 'opacity-40 grayscale' : 'shadow-sm'}`}
+                style={{ backgroundColor: displayColor || 'transparent' }}
+              >
+                {isInherited && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-[1px] bg-red-500/40 rotate-45" />
+                  </div>
+                )}
+              </div>
             </div>
+            {isInherited && (
+              <span className="text-[10px] font-mono opacity-20 uppercase tracking-tighter">Auto</span>
+            )}
           </div>
-          {isInherited && (
-            <span className="text-[10px] font-mono opacity-20 uppercase tracking-tighter">Auto</span>
-          )}
         </div>
       </div>
+
+      {!isInherited && (
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[9px] font-mono opacity-30 uppercase">OPACITY</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={alpha}
+            onChange={(e) => updateColor(hex, parseFloat(e.target.value))}
+            className="flex-1 h-1 bg-black/5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+          />
+          <span className="text-[9px] font-mono opacity-50 w-6 text-right">{Math.round(alpha * 100)}%</span>
+        </div>
+      )}
     </div>
+  );
+};
+
+const TextInput: React.FC<{
+  value: string;
+  placeholder?: string;
+  onChange: (val: string) => void;
+  className?: string;
+}> = ({ value, placeholder, onChange, className }) => {
+  const [localVal, setLocalVal] = useState(value);
+
+  useEffect(() => {
+    setLocalVal(value);
+  }, [value]);
+
+  return (
+    <input
+      className={className}
+      placeholder={placeholder}
+      value={localVal || ''}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onBlur={() => onChange(localVal)}
+      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+    />
   );
 };
 
 // --- Main Inspector Panel ---
 
 export const PropertyInspector: React.FC = () => {
-  const { selectedBlockId, contentBlocks, setSelectedBlock, updateBlockLocal, globalSettings, uiTheme } = useStore();
+  const { selectedBlockId, contentBlocks, setSelectedBlock, updateBlockLocal, globalSettings, uiTheme, saveSnapshot } = useStore();
   const [activeTab, setActiveTab] = useState<'C' | 'L' | 'S' | 'E'>('C');
+
 
   const activeBlock = contentBlocks.find(b => b.id === selectedBlockId);
   if (!activeBlock) return null;
@@ -245,6 +323,8 @@ export const PropertyInspector: React.FC = () => {
     { id: 'E', icon: <Zap size={16} />, label: 'Effects' }
   ] as const;
 
+
+
   return (
     <aside
       className="w-[380px] h-full border-l z-40 flex flex-col transition-colors duration-500 property-inspector"
@@ -263,6 +343,9 @@ export const PropertyInspector: React.FC = () => {
           <X size={20} />
         </button>
       </div>
+
+
+
       <style>{`
         @keyframes slideInRight {
           from { transform: translateX(100%); opacity: 0; }
@@ -292,249 +375,113 @@ export const PropertyInspector: React.FC = () => {
         {activeTab === 'C' && (
           <div className="space-y-6">
             {isNavbar && (
-              <>
+              <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Brand Logo / Icon</label>
-                  </div>
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Navigation Data</label>
+                  <TextInput
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                    placeholder="Brand Header"
+                    value={overrides.data?.header || ''}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.header', val)}
+                  />
 
-                  <div className="space-y-3">
-                    <input
-                      className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
-                      placeholder="Logo Text"
-                      value={overrides.data?.logo || ''}
-                      onChange={(e) => updateBlockLocal(activeBlock.id, 'data.logo', e.target.value)}
-                    />
-
-                    <TypoControls
-                      label="Logo"
-                      typo={overrides.data?.logoTypo}
-                      basePath="data.logoTypo"
-                      onUpdate={(path, val) => updateBlockLocal(activeBlock.id, path, val)}
-                    />
-
-                    <div className="flex items-center justify-between py-2 border-t border-black/5 mt-2">
-                      <span className="text-xs font-medium opacity-50">Show Icon</span>
-                      <button
-                        onClick={() => updateBlockLocal(activeBlock.id, 'data.showIcon', overrides.data?.showIcon !== false ? false : true)}
-                        className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.showIcon !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
-                      >
-                        <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.data?.showIcon !== false ? 'translate-x-4' : ''}`} />
-                      </button>
-                    </div>
-
-                    {overrides.data?.showIcon !== false && (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex p-0.5 bg-black/5 rounded-lg">
-                          <button
-                            onClick={() => updateBlockLocal(activeBlock.id, 'data.iconType', 'default')}
-                            className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType !== 'custom' ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
-                          >
-                            Default
-                          </button>
-                          <button
-                            onClick={() => updateBlockLocal(activeBlock.id, 'data.iconType', 'custom')}
-                            className={`flex-1 py-1.5 text-xs uppercase font-bold tracking-widest rounded-md transition-all ${overrides.data?.iconType === 'custom' ? 'bg-white text-slate-900 shadow-sm opacity-100' : 'opacity-60 hover:opacity-100'}`}
-                          >
-                            Custom
-                          </button>
-                        </div>
-
-                        {overrides.data?.iconType === 'custom' && (
-                          <div className="relative group">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    updateBlockLocal(activeBlock.id, 'data.customIconUrl', reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                            <div className="w-full h-24 bg-black/[0.03] border border-dashed border-black/10 rounded-xl flex flex-col items-center justify-center gap-2 group-hover:bg-black/[0.05] transition-all">
-                              {overrides.data?.customIconUrl ? (
-                                <img src={overrides.data.customIconUrl} className="h-12 w-12 object-contain rounded-md" alt="Custom Logo" />
-                              ) : (
-                                <Upload size={24} className="opacity-20" />
-                              )}
-                              <span className="text-xs uppercase tracking-widest opacity-40 font-bold">Upload Custom Icon</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isB0102 && (
-                  <div className="space-y-4 pt-4 border-t border-black/5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Free Positioning</label>
-                      <button
-                        onClick={() => {
-                          updateBlockLocal(activeBlock.id, 'style.positionX', 0);
-                          updateBlockLocal(activeBlock.id, 'style.positionY', 0);
-                        }}
-                        className="p-1 px-2 bg-gray-200 text-black text-xs rounded uppercase font-bold hover:bg-gray-300 transition-colors flex items-center gap-1"
-                      >
-                        <RefreshCcw size={12} /> Reset
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 opacity-30 pointer-events-none select-none">
-                      <div className="bg-black/5 rounded p-2 text-center text-[10px] font-mono">
-                        X: {Math.round(overrides.style?.positionX || 0)}
-                      </div>
-                      <div className="bg-black/5 rounded p-2 text-center text-[10px] font-mono">
-                        Y: {Math.round(overrides.style?.positionY || 0)}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4 pt-4 border-t border-black/5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Action Button</label>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs font-medium opacity-50 uppercase tracking-widest">Sticky Mode</span>
                     <button
-                      onClick={() => updateBlockLocal(activeBlock.id, 'data.showActionButton', overrides.data?.showActionButton !== false ? false : true)}
-                      className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.showActionButton !== false ? 'bg-blue-500' : 'bg-gray-300'}`}
+                      onClick={() => updateBlockLocal(activeBlock.id, 'data.stickyLogic', overrides.data?.stickyLogic === 'true' ? 'false' : 'true')}
+                      className={`w-9 h-5 rounded-full transition-colors relative ${overrides.data?.stickyLogic === 'true' ? 'bg-blue-500' : 'bg-gray-300'}`}
                     >
-                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.data?.showActionButton !== false ? 'translate-x-4' : ''}`} />
+                      <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${overrides.data?.stickyLogic === 'true' ? 'translate-x-4' : ''}`} />
                     </button>
                   </div>
-
-                  {overrides.data?.showActionButton !== false && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      <input
-                        className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium"
-                        placeholder="Button Label"
-                        value={isB0102 ? (overrides.data?.ctaText || '') : (overrides.data?.actionButtonText || 'Start')}
-                        onChange={(e) => updateBlockLocal(activeBlock.id, isB0102 ? 'data.ctaText' : 'data.actionButtonText', e.target.value)}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-black/5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Menu Links</label>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Links</label>
                     <button
                       onClick={() => {
-                        const newLinks = [...(overrides.data?.links || []), { id: crypto.randomUUID(), label: 'New Link', type: 'anchor', value: '' }];
+                        const newLinks = [...(overrides.data?.links || []), { label: 'Link', url: '#' }];
                         updateBlockLocal(activeBlock.id, 'data.links', newLinks);
                       }}
                       className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
                     >
-                      <Plus size={14} /> Add Link
+                      <Plus size={14} /> Add
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    {(overrides.data?.links || []).map((link: any, index: number) => (
-                      <div key={link.id} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {link.type === 'anchor' ? <Anchor size={12} className="opacity-30" /> : <ExternalLink size={12} className="opacity-30" />}
-                            <span className="text-[10px] font-mono opacity-20">Link_{index + 1}</span>
-                          </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              disabled={index === 0}
-                              onClick={() => {
-                                if (index === 0) return;
-                                const newLinks = [...overrides.data.links];
-                                [newLinks[index - 1], newLinks[index]] = [newLinks[index], newLinks[index - 1]];
-                                updateBlockLocal(activeBlock.id, 'data.links', newLinks);
-                              }}
-                              className="p-1 hover:text-blue-500 disabled:opacity-10"
-                            ><ArrowUp size={14} /></button>
-                            <button
-                              onClick={() => {
-                                const newLinks = (overrides.data.links || []).filter((l: any) => l.id !== link.id);
-                                updateBlockLocal(activeBlock.id, 'data.links', newLinks);
-                              }}
-                              className="p-1 hover:text-red-500"
-                            ><Trash2 size={14} /></button>
-                          </div>
+                    {(overrides.data?.links || []).map((link: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group/link transition-colors hover:bg-black/[0.05]">
+                        <div className="absolute top-2 right-2">
+                          <button
+                            onClick={() => {
+                              const newLinks = overrides.data.links.filter((_: any, i: number) => i !== idx);
+                              updateBlockLocal(activeBlock.id, 'data.links', newLinks);
+                            }}
+                            className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase opacity-40 italic">Label</label>
-                            <input
-                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
-                              value={link.label}
-                              onChange={(e) => {
-                                const newLinks = [...overrides.data.links];
-                                newLinks[index] = { ...newLinks[index], label: e.target.value };
-                                updateBlockLocal(activeBlock.id, 'data.links', newLinks);
-                              }}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase opacity-40 italic">Type</label>
-                            <select
-                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none"
-                              value={link.type}
-                              onChange={(e) => {
-                                const newLinks = [...overrides.data.links];
-                                newLinks[index] = { ...newLinks[index], type: e.target.value };
-                                updateBlockLocal(activeBlock.id, 'data.links', newLinks);
-                              }}
-                            >
-                              <option value="anchor">Anchor</option>
-                              <option value="url">URL</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <TypoControls
-                          label="Link"
-                          typo={link.typo}
-                          basePath={`data.links.${index}.typo`}
-                          onUpdate={(path, val) => updateBlockLocal(activeBlock.id, path, val)}
-                        />
 
                         <div className="space-y-1">
-                          <label className="text-xs uppercase opacity-40 italic">Target Value</label>
-                          {link.type === 'anchor' ? (
-                            <select
-                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-sm outline-none"
-                              value={link.value}
-                              onChange={(e) => {
+                          <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Label</label>
+                          <TextInput
+                            className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none uppercase"
+                            value={link.label}
+                            placeholder="MENU ITEM"
+                            onChange={(val) => {
+                              const newLinks = [...overrides.data.links];
+                              newLinks[idx] = { ...link, label: val };
+                              updateBlockLocal(activeBlock.id, 'data.links', newLinks);
+                            }}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Target Anchor</label>
+                          <div className="flex items-center gap-2">
+                            <TextInput
+                              className="flex-1 bg-white text-slate-900 border border-black/5 rounded p-2 text-[11px] outline-none font-mono text-blue-600 truncate"
+                              value={link.url}
+                              placeholder="#section-id"
+                              onChange={(val) => {
                                 const newLinks = [...overrides.data.links];
-                                newLinks[index] = { ...newLinks[index], value: e.target.value };
-                                updateBlockLocal(activeBlock.id, 'data.links', newLinks);
-                              }}
-                            >
-                              <option value="">Select Target Node</option>
-                              {contentBlocks.filter((b: any) => b.id !== activeBlock.id).map((b: any) => (
-                                <option key={b.id} value={b.id}>{b.type} ({b.id.slice(0, 4)})</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              className="w-full bg-white text-slate-900 border border-black/5 rounded p-1.5 text-[12px] outline-none focus:border-blue-500/20"
-                              placeholder="https://..."
-                              value={link.value}
-                              onChange={(e) => {
-                                const newLinks = [...overrides.data.links];
-                                newLinks[index] = { ...newLinks[index], value: e.target.value };
+                                newLinks[idx] = { ...link, url: val };
                                 updateBlockLocal(activeBlock.id, 'data.links', newLinks);
                               }}
                             />
-                          )}
+                            <div className="relative" title="Pick Block Anchor">
+                              <div className="p-2 bg-white border border-black/5 rounded hover:bg-blue-50 text-blue-500 transition-colors shadow-sm">
+                                <Anchor size={14} />
+                              </div>
+                              <select
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                value=""
+                                style={{ color: '#000' }}
+                                onChange={(e) => {
+                                  if (!e.target.value) return;
+                                  const newLinks = [...overrides.data.links];
+                                  newLinks[idx] = { ...link, url: e.target.value };
+                                  updateBlockLocal(activeBlock.id, 'data.links', newLinks);
+                                }}
+                              >
+                                <option value="" style={{ color: '#000' }}>Select Target...</option>
+                                {contentBlocks.map(b => (
+                                  <option key={b.id} value={`#${b.id}`} style={{ color: '#000' }}>
+                                    {b.type} - {b.localOverrides?.data?.title?.slice(0, 15) || 'Untitled'} (#{b.id.slice(0, 4)})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             {isHero && (
@@ -2028,27 +1975,27 @@ const ThemeSettingsPanel: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between py-2 border-b border-black/5">
               <span className="text-xs font-medium opacity-60">Accent Color</span>
-              <input 
-                type="color" 
-                value={uiTheme.accents} 
+              <input
+                type="color"
+                value={uiTheme.accents}
                 onChange={(e) => updateUITheme('accents', e.target.value)}
                 className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
               />
             </div>
             <div className="flex items-center justify-between py-2 border-b border-black/5">
               <span className="text-xs font-medium opacity-60">Panel Color</span>
-              <input 
-                type="color" 
-                value={uiTheme.lightPanel} 
+              <input
+                type="color"
+                value={uiTheme.lightPanel}
                 onChange={(e) => updateUITheme('lightPanel', e.target.value)}
                 className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
               />
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-xs font-medium opacity-60">Text Color</span>
-              <input 
-                type="color" 
-                value={uiTheme.fonts} 
+              <input
+                type="color"
+                value={uiTheme.fonts}
                 onChange={(e) => updateUITheme('fonts', e.target.value)}
                 className="w-8 h-8 rounded-full cursor-pointer border-none outline-none"
               />
@@ -2064,10 +2011,10 @@ const ThemeSettingsPanel: React.FC = () => {
               <span className="text-[10px] font-mono opacity-40">SCALE_VAL</span>
               <span className="text-xs font-bold">{uiTheme.interfaceScale}%</span>
             </div>
-            <input 
-              type="range" 
-              min="80" 
-              max="130" 
+            <input
+              type="range"
+              min="80"
+              max="130"
               step="5"
               value={uiTheme.interfaceScale}
               onChange={(e) => updateUITheme('interfaceScale', parseInt(e.target.value))}
@@ -2099,30 +2046,42 @@ export const RightSidebar: React.FC = () => {
     undo, redo, past, future,
     viewportMode, setViewport,
     gridMode, cycleGrid,
-    loadSnapshot
+    loadSnapshot,
+    emergencyRestore
   } = useStore();
 
   // Integrated Keyboard listeners moved from old Toolbar
+  const [keyBuffer, setKeyBuffer] = useState('');
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'z') {
-                e.preventDefault();
-                undo();
-            } else if (e.key === 'y') {
-                e.preventDefault();
-                redo();
-            }
+      // Emergency Recovery: Detect "666" sequence
+      if (e.key >= '0' && e.key <= '9') {
+        const newBuffer = (keyBuffer + e.key).slice(-3);
+        setKeyBuffer(newBuffer);
+        if (newBuffer === '666') {
+          emergencyRestore('666');
+          setKeyBuffer('');
         }
-        if (e.key === '6' && e.ctrlKey && e.shiftKey) {
-            loadSnapshot('GOLDEN_STABLE_666');
-            triggerIOFeedback();
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') {
+          e.preventDefault();
+          undo();
+        } else if (e.key === 'y') {
+          e.preventDefault();
+          redo();
         }
+      }
+      if (e.key === '6' && e.ctrlKey && e.shiftKey) {
+        emergencyRestore('666');
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, loadSnapshot, triggerIOFeedback]);
+  }, [undo, redo, loadSnapshot, triggerIOFeedback, keyBuffer, emergencyRestore]);
 
   const isMobile = viewportMode === 'mobile';
   const btnBase = "p-3 transition-all duration-300 rounded-lg hover:brightness-95 flex items-center justify-center";
@@ -2234,7 +2193,7 @@ export const RightSidebar: React.FC = () => {
           </button>
         </div>
       </aside>
-      
+
       {/* Dynamic Overlay Panels */}
       {!isPreviewMode && isThemePanelOpen && <ThemeSettingsPanel />}
     </>

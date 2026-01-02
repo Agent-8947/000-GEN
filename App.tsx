@@ -133,6 +133,42 @@ export default function App() {
   // Editor Interface
   const appBg = ''; // Deprecated, using dynamic styles
 
+  // Production Mode Check
+  if ((window as any).__PROD_MODE__) {
+    return (
+      <main
+        key={canvasKey}
+        className="w-full min-h-screen relative overflow-x-hidden transition-colors duration-500"
+        style={{
+          backgroundColor: 'var(--dna-bg)',
+          color: 'var(--dna-text-prim)'
+        }}
+      >
+        {/* Global Styles Injection for Production */}
+        <style>{`
+          .custom-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+          .custom-scrollbar::-webkit-scrollbar { display: none; }
+          /* Ensure DNA variables are respected */
+          body { background-color: var(--dna-bg); color: var(--dna-text-prim); font-family: var(--dna-font-family); }
+          /* Hide editor UI elements in production */
+          aside, 
+          .sidebar, 
+          .right-sidebar, 
+          .global-settings, 
+          .block-list, 
+          .property-inspector, 
+          .data-panel,
+          button {
+            display: none !important;
+          }
+        `}</style>
+
+        <Canvas />
+        <div id="portal-root" className="fixed inset-0 pointer-events-none z-[9999]" />
+      </main>
+    );
+  }
+
   return (
     <div
       className="h-screen w-full flex transition-colors duration-500 overflow-hidden selection:bg-blue-500/20"
