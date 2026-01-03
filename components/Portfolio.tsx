@@ -62,8 +62,9 @@ export const Portfolio: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                         const isTilt = overrides.type === 'B0503';
                         const strength = parseFloat(overrides.physics?.strength) || 1;
                         const friction = parseFloat(overrides.physics?.friction) || 0.1;
+                        const hasLink = item.link && item.link.trim() !== '';
 
-                        return (
+                        const content = (
                             <motion.div
                                 key={item.id}
                                 initial={{ opacity: 0, y: animEntranceY }}
@@ -75,14 +76,14 @@ export const Portfolio: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                                     rotateY: 10 * strength,
                                     scale: 1.05
                                 } : { scale: parseFloat(style.hoverScale) || 1.05 }}
-                                className={`relative group overflow-hidden bg-black/[0.02] aspect-square cursor-pointer`}
+                                className={`relative group overflow-hidden bg-black/[0.02] aspect-square ${hasLink ? 'cursor-pointer' : ''}`}
                                 style={{
                                     borderRadius: radius,
                                     border: `${gl06[4].value}px solid rgba(0,0,0,${parseFloat(gl06[5].value) / 100})`,
                                     perspective: '1000px',
                                     transition: isTilt ? `transform ${0.5 + friction}s cubic-bezier(0.17, 0.67, 0.83, 0.67)` : undefined
                                 }}
-                                onClick={() => isPreviewMode && setFullScreenMedia(item.url)}
+                                onClick={() => !hasLink && isPreviewMode && setFullScreenMedia(item.url)}
                             >
                                 <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={item.title} />
 
@@ -93,13 +94,27 @@ export const Portfolio: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                                     </div>
                                 )}
 
-                                {isVideo(item.url) && (
+                                {item.showPlayButton && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                                            <Play size={24} fill="currentColor" className="text-black ml-1" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isVideo(item.url) && !item.showPlayButton && (
                                     <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white">
                                         <Play size={14} fill="currentColor" />
                                     </div>
                                 )}
                             </motion.div>
                         );
+
+                        return hasLink ? (
+                            <a key={item.id} href={item.link} target="_blank" rel="noopener noreferrer">
+                                {content}
+                            </a>
+                        ) : content;
                     })}
                 </div>
             </div>

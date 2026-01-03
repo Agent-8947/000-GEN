@@ -793,6 +793,34 @@ export const PropertyInspector: React.FC = () => {
                           </div>
                         )}
                       </div>
+
+                      <div className="space-y-2 pt-2 border-t border-black/5">
+                        <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Link URL (Optional)</label>
+                        <input
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 font-mono"
+                          placeholder="https://example.com"
+                          value={item.link || ''}
+                          onChange={(e) => {
+                            const newItems = [...overrides.data.items];
+                            newItems[idx] = { ...newItems[idx], link: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Show Play Button</label>
+                        <button
+                          onClick={() => {
+                            const newItems = [...overrides.data.items];
+                            newItems[idx] = { ...newItems[idx], showPlayButton: !item.showPlayButton };
+                            updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                          }}
+                          className={`w-9 h-5 rounded-full transition-colors relative ${item.showPlayButton ? 'bg-blue-500' : 'bg-gray-300'}`}
+                        >
+                          <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${item.showPlayButton ? 'translate-x-4' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1308,6 +1336,59 @@ export const PropertyInspector: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {isContactForm && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Form Title</label>
+                  <TextInput
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                    placeholder="Get in Touch"
+                    value={overrides.data?.title || ''}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Subtitle</label>
+                  <TextInput
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30"
+                    placeholder="Our team will respond within 24 hours."
+                    value={overrides.data?.subtitle || ''}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.subtitle', val)}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-black/5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Telegram Integration</label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Bot Token</label>
+                    <input
+                      className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-mono outline-none focus:border-blue-500/30"
+                      placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
+                      value={overrides.data?.telegramBotToken || ''}
+                      onChange={(e) => updateBlockLocal(activeBlock.id, 'data.telegramBotToken', e.target.value)}
+                    />
+                    <p className="text-[9px] opacity-40">Get from @BotFather on Telegram</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Chat ID</label>
+                    <input
+                      className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-mono outline-none focus:border-blue-500/30"
+                      placeholder="-1001234567890"
+                      value={overrides.data?.telegramChatId || ''}
+                      onChange={(e) => updateBlockLocal(activeBlock.id, 'data.telegramChatId', e.target.value)}
+                    />
+                    <p className="text-[9px] opacity-40">Use @userinfobot to get your Chat ID</p>
+                  </div>
                 </div>
               </div>
             )}

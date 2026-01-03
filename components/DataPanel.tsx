@@ -577,29 +577,56 @@ export const DataPanel: React.FC = () => {
                             </div>
                         )}
 
-                        <div className={\`grid grid-cols-1 md:grid-cols-\${columns === 'masonry' ? '2' : columns} gap-6\`}>
-                            {items.map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="group cursor-pointer"
-                                >
-                                    <ImageRenderer 
-                                        src={item.url || item.src || item.imageUrl} 
-                                        shape="landscape"
-                                    />
-                                    {item.title && (
-                                        <div className="mt-4 text-center">
-                                            <h3 className="font-bold text-lg uppercase tracking-wide group-hover:text-[var(--dna-accent)] transition-colors">
-                                                {item.title}
-                                            </h3>
+                        <div className=\"grid grid-cols-1 md:grid-cols-3 gap-6\">
+                            {items.map((item, i) => {
+                                const hasLink = item.link && item.link.trim() !== '';
+                                const content = (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: i * 0.1 }}
+                                        className="group cursor-pointer transition-transform duration-300 hover:scale-105"
+                                    >
+                                        <div className="relative overflow-hidden rounded-lg shadow-lg">
+                                            <div className="aspect-video w-full overflow-hidden">
+                                                <img 
+                                                    src={item.url || item.src || item.imageUrl}
+                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    alt={item.title || 'Portfolio item'}
+                                                />
+                                            </div>
+                                            
+                                            <div className=\"absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300\"></div>
+                                            
+                                            {item.showPlayButton && (
+                                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                    <div className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-black ml-1">
+                                                            <path d="M8 5v14l11-7z"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </motion.div>
-                            ))}
+                                        
+                                        {item.title && (
+                                            <div className="mt-4 text-center">
+                                                <h3 className="font-bold text-lg uppercase tracking-wide group-hover:text-[var(--dna-accent)] transition-colors">
+                                                    {item.title}
+                                                </h3>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                );
+                                
+                                return hasLink ? (
+                                    <a key={i} href={item.link} target="_blank" rel="noopener noreferrer">
+                                        {content}
+                                    </a>
+                                ) : content;
+                            })}
                         </div>
                     </div>
                 </section>
