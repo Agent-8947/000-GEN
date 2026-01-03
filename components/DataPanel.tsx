@@ -1249,9 +1249,6 @@ export const DataPanel: React.FC = () => {
             if (type.startsWith('B22')) {
                 return <ReviewsBlock block={block} padding={padding} />;
             }
-            if (type.startsWith('B24')) {
-                return <SocialDockBlock block={block} padding={padding} />;
-            }
             
             // Fallback to universal block
             return <UniversalBlock block={block} padding={padding} />;

@@ -1393,6 +1393,84 @@ export const PropertyInspector: React.FC = () => {
               </div>
             )}
 
+            {isSocial && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Social Links</label>
+                  <button
+                    onClick={() => {
+                      const newPlatforms = [...(overrides.data?.platforms || []), { type: 'twitter', url: '' }];
+                      updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                    }}
+                    className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Add Link
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(overrides.data?.platforms || []).map((platform: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono opacity-20">Link_{idx + 1}</span>
+                        <button
+                          onClick={() => {
+                            const newPlatforms = overrides.data.platforms.filter((_: any, i: number) => i !== idx);
+                            updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                          }}
+                          className="p-1 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Platform</label>
+                        <select
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30"
+                          value={platform.type || 'twitter'}
+                          onChange={(e) => {
+                            const newPlatforms = [...overrides.data.platforms];
+                            newPlatforms[idx] = { ...platform, type: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                          }}
+                        >
+                          <option value="twitter">Twitter / X</option>
+                          <option value="github">GitHub</option>
+                          <option value="linkedin">LinkedIn</option>
+                          <option value="instagram">Instagram</option>
+                          <option value="youtube">YouTube</option>
+                          <option value="facebook">Facebook</option>
+                          <option value="telegram">Telegram</option>
+                          <option value="whatsapp">WhatsApp</option>
+                          <option value="discord">Discord</option>
+                          <option value="twitch">Twitch</option>
+                          <option value="pinterest">Pinterest</option>
+                          <option value="reddit">Reddit</option>
+                          <option value="tiktok">TikTok</option>
+                          <option value="globe">Website</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">URL</label>
+                        <input
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-mono outline-none focus:border-blue-500/30"
+                          placeholder="https://..."
+                          value={platform.url || ''}
+                          onChange={(e) => {
+                            const newPlatforms = [...overrides.data.platforms];
+                            newPlatforms[idx] = { ...platform, url: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.platforms', newPlatforms);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {isSkills && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">

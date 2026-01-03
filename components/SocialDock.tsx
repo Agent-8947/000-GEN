@@ -2,7 +2,7 @@
 import React from 'react';
 import { useStore } from '../store';
 import { motion } from 'framer-motion';
-import { Twitter, Github, Linkedin, Globe, Instagram, Youtube } from 'lucide-react';
+import { Twitter, Github, Linkedin, Globe, Instagram, Youtube, Facebook, Send, MessageCircle, Hash, Twitch, Pin, MessageSquare } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
     twitter: Twitter,
@@ -10,6 +10,14 @@ const ICON_MAP: Record<string, any> = {
     linkedin: Linkedin,
     instagram: Instagram,
     youtube: Youtube,
+    facebook: Facebook,
+    telegram: Send,
+    whatsapp: MessageCircle,
+    discord: Hash,
+    twitch: Twitch,
+    pinterest: Pin,
+    reddit: MessageSquare,
+    tiktok: Globe, // TikTok doesn't have a lucide icon, using Globe as fallback
     globe: Globe
 };
 
