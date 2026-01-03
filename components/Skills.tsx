@@ -144,12 +144,14 @@ export const Skills: React.FC<SkillsProps> = ({ id, type, localOverrides }) => {
                                             >
                                                 {item.name}
                                             </span>
-                                            <span
-                                                className="opacity-40 font-mono text-xs"
-                                                style={{ color: textSec }}
-                                            >
-                                                {item.level}%
-                                            </span>
+                                            {data?.hidePercentages !== true && (
+                                                <span
+                                                    className="opacity-40 font-mono text-xs"
+                                                    style={{ color: textSec }}
+                                                >
+                                                    {item.level}%
+                                                </span>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}

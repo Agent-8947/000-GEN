@@ -1,12 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
-
-import { Sun, Moon } from 'lucide-react';
+import { LANGUAGE_NAMES } from '../utils/translations';
+import { Sun, Moon, Globe, ChevronDown } from 'lucide-react';
 
 /* Update Navbar component to accept 'type' prop and use it for glass effect logic instead of 'id' to fix type mismatch in ContentBlock.tsx */
 export const Navbar: React.FC<{ id: string, type: string, localOverrides: any }> = ({ id, type, localOverrides }) => {
-    const { globalSettings, toggleSiteTheme } = useStore();
+    const { globalSettings, toggleSiteTheme, currentLanguage, setCurrentLanguage } = useStore();
+    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+
+    // Get available languages from GL12
+    const availableLanguages = (globalSettings['GL12']?.params[1]?.value || 'en,uk,ru').split(',');
 
     const data = localOverrides.data || {};
     const layout = localOverrides.layout || {};
@@ -77,6 +81,48 @@ export const Navbar: React.FC<{ id: string, type: string, localOverrides: any }>
                         {link.label}
                     </a>
                 ))}
+
+                {/* Language Switcher */}
+                <div className="relative">
+                    <button
+                        onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                        className="flex items-center gap-1 opacity-40 hover:opacity-100 transition-opacity text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: txtColor }}
+                    >
+                        <Globe size={14} />
+                        <span>{currentLanguage.toUpperCase()}</span>
+                        <ChevronDown size={10} />
+                    </button>
+
+                    {langDropdownOpen && (
+                        <div
+                            className="absolute top-full right-0 mt-2 py-2 rounded-lg shadow-2xl border z-50 min-w-[160px]"
+                            style={{
+                                backgroundColor: isDark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.95)',
+                                backdropFilter: 'blur(12px)',
+                                borderColor: globalSettings['GL02']?.params[5]?.value || '#00000020'
+                            }}
+                        >
+                            {availableLanguages.map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => {
+                                        setCurrentLanguage(lang);
+                                        setLangDropdownOpen(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs flex items-center gap-2 hover:bg-white/10 transition-colors"
+                                    style={{
+                                        color: txtColor,
+                                        backgroundColor: currentLanguage === lang ? 'rgba(59, 130, 246, 0.2)' : 'transparent'
+                                    }}
+                                >
+                                    <span className="text-base">{LANGUAGE_NAMES[lang]?.flag || '🌐'}</span>
+                                    <span className="font-medium">{LANGUAGE_NAMES[lang]?.name || lang}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 {/* Theme Toggle */}
                 <button

@@ -87,7 +87,8 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
         color: overrides.style?.titleColor || overrides.style?.textColor || gl02[3].value,
-        fontFamily: 'var(--dna-font-family)'
+        fontFamily: 'var(--dna-font-family)',
+        whiteSpace: 'pre-line' as const
     };
 
     const descStyle = {
@@ -100,7 +101,8 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             WebkitFontSmoothing: gl01[6].value === 'true' ? 'antialiased' : 'auto'
         }),
         color: overrides.style?.descColor || overrides.style?.textColor || gl02[4].value,
-        fontFamily: 'var(--dna-font-family)'
+        fontFamily: 'var(--dna-font-family)',
+        whiteSpace: 'pre-line' as const
     };
 
     const px = overrides.layout?.paddingX || gl03[2].value;

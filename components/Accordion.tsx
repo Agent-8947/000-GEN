@@ -13,6 +13,13 @@ export const Accordion: React.FC<{ id: string, localOverrides: any }> = ({ id, l
     const gl02 = globalSettings['GL02'].params;
     const radius = globalSettings['GL07'].params[0].value;
 
+    // Theme colors
+    const textPrim = gl02[3].value; // GL02 P4
+    const textSec = gl02[4].value;  // GL02 P5
+    const accent = gl02[2].value;   // GL02 P3
+    const borderColor = gl02[5].value; // GL02 P6
+    const surface = gl02[1].value;  // GL02 P2
+
     return (
         <section
             id={id}
@@ -20,12 +27,13 @@ export const Accordion: React.FC<{ id: string, localOverrides: any }> = ({ id, l
             style={{
                 paddingTop: `${layout.paddingY}px`,
                 paddingBottom: `${layout.paddingY}px`,
-                backgroundColor: localOverrides.style?.bgFill || localOverrides.style?.background || localOverrides.style?.backgroundColor || 'transparent'
+                backgroundColor: localOverrides.style?.bgFill || localOverrides.style?.background || localOverrides.style?.backgroundColor || 'transparent',
+                color: textPrim
             }}
         >
             <div className="mx-auto" style={{ maxWidth: `${layout.maxWidth}px` }}>
                 {data.title && (
-                    <h2 className="text-2xl font-black mb-12 uppercase tracking-tighter text-center" style={{ color: gl02[3].value }}>
+                    <h2 className="text-3xl font-black mb-16 uppercase tracking-widest text-center" style={{ color: textPrim }}>
                         {data.title}
                     </h2>
                 )}
@@ -36,21 +44,25 @@ export const Accordion: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                         return (
                             <div
                                 key={item.id}
-                                className="overflow-hidden border transition-all duration-300"
+                                className="overflow-hidden border transition-all duration-500"
                                 style={{
-                                    borderColor: uiTheme.elements,
+                                    borderColor: isOpen ? accent : `${borderColor}30`,
                                     borderRadius: `${radius}px`,
-                                    backgroundColor: isOpen ? 'rgba(0,0,0,0.02)' : 'transparent'
+                                    backgroundColor: isOpen ? `${surface}40` : 'transparent',
+                                    boxShadow: isOpen ? `0 10px 30px -10px ${accent}20` : 'none'
                                 }}
                             >
                                 <button
                                     onClick={() => setOpenId(isOpen ? null : item.id)}
-                                    className="w-full flex items-center justify-between p-6 text-left"
+                                    className="w-full flex items-center justify-between p-6 text-left transition-colors"
+                                    style={{ color: isOpen ? accent : textPrim }}
                                 >
-                                    <span className="font-bold uppercase tracking-tight text-sm opacity-80">
+                                    <span className="font-bold uppercase tracking-widest text-sm">
                                         {item.question}
                                     </span>
-                                    {isOpen ? <Minus size={16} /> : <Plus size={16} />}
+                                    <div className="transition-transform duration-300" style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(0deg)' }}>
+                                        {isOpen ? <Minus size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={3} />}
+                                    </div>
                                 </button>
                                 <AnimatePresence>
                                     {isOpen && (
@@ -60,21 +72,15 @@ export const Accordion: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                                             exit={{ height: 0, opacity: 0 }}
                                             transition={{
                                                 duration: parseFloat(globalSettings['GL09'].params[0].value) || 0.3,
-                                                ease: (() => {
-                                                    const easeId = globalSettings['GL09'].params[5].value;
-                                                    switch (easeId) {
-                                                        case '1': return 'easeInOut';
-                                                        case '2': return 'circOut';
-                                                        case '3': return [0.34, 1.56, 0.64, 1]; // backOut
-                                                        case '4': return 'linear';
-                                                        case '5': return [0.175, 0.885, 0.32, 1.275]; // bounce-ish
-                                                        default: return 'easeInOut';
-                                                    }
-                                                })()
+                                                ease: 'circOut'
                                             }}
-                                            className="px-6 pb-6 text-sm opacity-40 leading-relaxed font-mono"
                                         >
-                                            {item.answer}
+                                            <div
+                                                className="px-6 pb-8 text-sm leading-relaxed font-medium"
+                                                style={{ color: textSec }}
+                                            >
+                                                {item.answer}
+                                            </div>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>

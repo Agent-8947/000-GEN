@@ -186,6 +186,13 @@ export const DataPanel: React.FC = () => {
         overflow: hidden;
       }
       
+      /* Levitation Animation */
+      @keyframes levitate {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0px); }
+      }
+      
       /* Footer */
       .footer-links {
         display: flex;
@@ -235,7 +242,7 @@ export const DataPanel: React.FC = () => {
         );
 
         // IMAGE RENDERER
-        const ImageRenderer = ({ src, shape = 'auto', style = {} }) => {
+        const ImageRenderer = ({ src, shape = 'auto', style = {}, levitation = false, levitationSpeed = 3 }) => {
             if (!src) return null;
             
             const isCircle = shape === 'circle';
@@ -249,13 +256,18 @@ export const DataPanel: React.FC = () => {
                               : isWide ? '16/9'
                               : 'auto';
             
+            const animationStyle = levitation ? {
+                animation: 'levitate ' + levitationSpeed + 's ease-in-out infinite'
+            } : {};
+            
             return (
                 <div 
                     className="img-wrapper shadow-2xl" 
                     style={{ 
                         aspectRatio, 
                         borderRadius,
-                        ...style 
+                        ...style,
+                        ...animationStyle
                     }}
                 >
                     <img src={src} alt="Content" loading="lazy" />
@@ -313,12 +325,12 @@ export const DataPanel: React.FC = () => {
                                 viewport={{ once: true }}
                             >
                                 {data.title && (
-                                    <h1 className="hero-title uppercase mb-8">
+                                    <h1 className="hero-title uppercase mb-8" style={{ whiteSpace: 'pre-line' }}>
                                         {data.title}
                                     </h1>
                                 )}
                                 {data.description && (
-                                    <p className="text-xl opacity-60 mb-10 leading-relaxed max-w-2xl">
+                                    <p className="text-xl opacity-60 mb-10 leading-relaxed max-w-2xl" style={{ whiteSpace: 'pre-line' }}>
                                         {data.description}
                                     </p>
                                 )}
@@ -343,7 +355,13 @@ export const DataPanel: React.FC = () => {
                                     viewport={{ once: true }}
                                     className="flex justify-center lg:justify-end"
                                 >
-                                    <ImageRenderer src={media.imageUrl} shape={media.shape} style={style} />
+                                    <ImageRenderer 
+                                        src={media.imageUrl} 
+                                        shape={media.shape} 
+                                        style={style}
+                                        levitation={media.levitation}
+                                        levitationSpeed={media.levitationSpeed || 3}
+                                    />
                                 </motion.div>
                             )}
                         </div>
@@ -401,9 +419,11 @@ export const DataPanel: React.FC = () => {
                                                     <span className="font-bold text-sm uppercase tracking-wide">
                                                         {skill.name}
                                                     </span>
-                                                    <span className="text-sm opacity-50">
-                                                        {skill.level}%
-                                                    </span>
+                                                    {data.hidePercentages !== true && (
+                                                        <span className="text-sm opacity-50">
+                                                            {skill.level}%
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                                                     <motion.div
