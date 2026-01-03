@@ -69,7 +69,7 @@ export const Timeline: React.FC<{ id: string, localOverrides: any }> = ({ id, lo
 
                             <div className="flex flex-col pb-4">
                                 <div
-                                    className="text-[10px] uppercase tracking-[0.4em] font-black mb-1 opacity-40"
+                                    className="text-[10px] uppercase tracking-[0.4em] font-black mb-1 opacity-60"
                                     style={{
                                         color: textSec,
                                         fontFamily: fontName === 'Orbitron' ? 'var(--dna-font-family)' : 'inherit'

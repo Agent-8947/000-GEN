@@ -46,7 +46,7 @@ export const Portfolio: React.FC<{ id: string, localOverrides: any }> = ({ id, l
                     <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight" style={{ color: gl02[3].value, fontFamily: 'var(--dna-font-family)' }}>
                         {data.title}
                     </h2>
-                    <p className="text-lg opacity-40 font-medium max-w-2xl mx-auto">
+                    <p className="text-lg opacity-60 font-medium max-w-2xl mx-auto" style={{ color: gl02[3].value }}>
                         {data.subtitle}
                     </p>
                 </motion.div>

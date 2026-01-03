@@ -679,7 +679,23 @@ export const PropertyInspector: React.FC = () => {
 
             {isPortfolio && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Portfolio Header</label>
+                  <TextInput
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                    placeholder="Section Title"
+                    value={overrides.data?.title || ''}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-20"
+                    placeholder="Section Subtitle"
+                    value={overrides.data?.subtitle || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.subtitle', e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-black/5">
                   <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Gallery Items</label>
                   <button
                     onClick={() => {
@@ -717,16 +733,66 @@ export const PropertyInspector: React.FC = () => {
                           updateBlockLocal(activeBlock.id, 'data.items', newItems);
                         }}
                       />
-                      <input
-                        className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-sm outline-none focus:border-blue-500/30 font-mono"
-                        placeholder="Media URL"
-                        value={item.url || ''}
-                        onChange={(e) => {
-                          const newItems = [...overrides.data.items];
-                          newItems[idx] = { ...newItems[idx], url: e.target.value };
-                          updateBlockLocal(activeBlock.id, 'data.items', newItems);
-                        }}
-                      />
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Media Source (URL or Upload)</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            className="flex-1 bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none focus:border-blue-500/30 font-mono"
+                            placeholder="https://..."
+                            value={item.url || ''}
+                            onChange={(e) => {
+                              const newItems = [...overrides.data.items];
+                              newItems[idx] = { ...newItems[idx], url: e.target.value };
+                              updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                            }}
+                          />
+                          <label className="cursor-pointer p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors shadow-sm shrink-0" title="Upload Image">
+                            <Upload size={14} />
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    const newItems = [...overrides.data.items];
+                                    newItems[idx] = { ...newItems[idx], url: reader.result as string };
+                                    updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                        {item.url && (
+                          <div className="relative group/preview w-full h-24 rounded-lg border border-black/5 overflow-hidden bg-black/5 shadow-inner">
+                            <img
+                              src={item.url}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover/preview:scale-105"
+                              alt="Preview"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+URL';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center">
+                              <button
+                                onClick={() => {
+                                  const newItems = [...overrides.data.items];
+                                  newItems[idx] = { ...newItems[idx], url: '' };
+                                  updateBlockLocal(activeBlock.id, 'data.items', newItems);
+                                }}
+                                className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all transform hover:scale-110 active:scale-95"
+                                title="Clear Media"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

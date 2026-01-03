@@ -571,8 +571,8 @@ export const DataPanel: React.FC = () => {
                                 >
                                     {data.title || "Portfolio"}
                                 </motion.h2>
-                                {data.description && (
-                                    <p className="text-lg opacity-50">{data.description}</p>
+                                {data.subtitle && (
+                                    <p className="text-lg opacity-60 font-medium max-w-2xl mx-auto">{data.subtitle}</p>
                                 )}
                             </div>
                         )}

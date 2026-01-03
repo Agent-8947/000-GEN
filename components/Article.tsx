@@ -65,7 +65,7 @@ export const Article: React.FC<{ id: string, localOverrides: any }> = ({ id, loc
                     {data.title}
                 </h2>
                 {data.subtitle && (
-                    <p className="text-xl md:text-2xl opacity-40 mb-12 font-medium">
+                    <p className="text-xl md:text-2xl opacity-60 mb-12 font-medium">
                         {data.subtitle}
                     </p>
                 )}

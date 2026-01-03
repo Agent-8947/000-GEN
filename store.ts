@@ -786,6 +786,8 @@ export const useStore = create<GridState>()(
           },
           'B0501': {
             data: {
+              title: 'SELECTED WORKS',
+              subtitle: 'A curated collection of neural grid architectures and visual nodes.',
               items: [
                 { id: 'p1', title: 'Neural Grid Alpha', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80' },
                 { id: 'p2', title: 'Matrix Sync Beta', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80' },
@@ -797,6 +799,8 @@ export const useStore = create<GridState>()(
           },
           'B0503': {
             data: {
+              title: 'INTERACTIVE GRID',
+              subtitle: 'Dynamic physics-based presentation with neural depth synchronization.',
               items: [
                 { id: 'm1', title: 'Tilt Grid Alpha', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80' },
                 { id: 'm2', title: 'Tilt Grid Beta', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80' },

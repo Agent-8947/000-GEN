@@ -65,7 +65,7 @@ export const Stats: React.FC<{ id: string, type: string, localOverrides: any }> 
                             {stat.value}
                         </div>
                         <div
-                            className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] opacity-40"
+                            className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] opacity-60"
                             style={{ color: gl02[3].value }} // Text Prim
                         >
                             {stat.label}

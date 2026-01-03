@@ -146,7 +146,7 @@ export const Skills: React.FC<SkillsProps> = ({ id, type, localOverrides }) => {
                                             </span>
                                             {data?.hidePercentages !== true && (
                                                 <span
-                                                    className="opacity-40 font-mono text-xs"
+                                                    className="opacity-60 font-mono text-xs"
                                                     style={{ color: textSec }}
                                                 >
                                                     {item.level}%
