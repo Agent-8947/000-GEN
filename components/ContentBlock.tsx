@@ -19,6 +19,11 @@ import { Footer } from './Footer';
 import { Logos } from './Logos';
 import { Accordion } from './Accordion';
 import { Tabs } from './Tabs';
+import { Methodology } from './Methodology';
+import { TechStack } from './TechStack';
+import { FeaturedProject } from './FeaturedProject';
+import { ProjectsGrid } from './ProjectsGrid';
+import { CodeShowcase } from './CodeShowcase';
 
 export const ContentBlock: React.FC<{ id: string, type: string, localOverrides: any }> = ({ id, type, localOverrides }) => {
     const { setSelectedBlock, selectedBlockId, uiTheme, globalSettings } = useStore();
@@ -81,6 +86,21 @@ export const ContentBlock: React.FC<{ id: string, type: string, localOverrides: 
             case 'B1602':
             case 'Preview':
                 return <Preview id={id} localOverrides={localOverrides} />;
+            case 'B1701':
+            case 'Methodology':
+                return <Methodology id={id} localOverrides={localOverrides} />;
+            case 'B1801':
+            case 'TechStack':
+                return <TechStack id={id} localOverrides={localOverrides} />;
+            case 'B1901':
+            case 'FeaturedProject':
+                return <FeaturedProject id={id} localOverrides={localOverrides} />;
+            case 'B1902':
+            case 'ProjectsGrid':
+                return <ProjectsGrid id={id} localOverrides={localOverrides} />;
+            case 'B1903':
+            case 'CodeShowcase':
+                return <CodeShowcase id={id} localOverrides={localOverrides} />;
             case 'B2101':
             case 'Logos':
                 return <Logos id={id} localOverrides={localOverrides} />;

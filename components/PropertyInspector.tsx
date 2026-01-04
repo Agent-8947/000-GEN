@@ -314,6 +314,11 @@ export const PropertyInspector: React.FC = () => {
   const isVariant03 = activeBlock.type?.endsWith('03');
   const isB0102 = activeBlock.type === 'B0102';
   const isLogos = activeBlock.type?.startsWith('B21') || activeBlock.type === 'Logos';
+  const isMethodology = activeBlock.type?.startsWith('B17') || activeBlock.type === 'Methodology';
+  const isTechStack = activeBlock.type?.startsWith('B18') || activeBlock.type === 'TechStack';
+  const isFeaturedProject = activeBlock.type?.startsWith('B1901') || activeBlock.type === 'FeaturedProject';
+  const isProjectsGrid = activeBlock.type?.startsWith('B1902') || activeBlock.type === 'ProjectsGrid';
+  const isCodeShowcase = activeBlock.type?.startsWith('B1903') || activeBlock.type === 'CodeShowcase';
 
   const tabBg = 'bg-black/5';
 
@@ -1689,6 +1694,448 @@ export const PropertyInspector: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {isMethodology && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Methodology Content</label>
+                  <TextInput
+                    placeholder="Section Title"
+                    value={overrides.data?.title}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-24"
+                    placeholder="Section Description"
+                    value={overrides.data?.description || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.description', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Steps</label>
+                    <button
+                      onClick={() => {
+                        const newSteps = [...(overrides.data?.steps || []), { number: '01', title: 'New Step', description: 'Step description' }];
+                        updateBlockLocal(activeBlock.id, 'data.steps', newSteps);
+                      }}
+                      className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={14} /> Add Step
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(overrides.data?.steps || []).map((step: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
+                        <div className="absolute top-2 right-2">
+                          <button
+                            onClick={() => {
+                              const newSteps = overrides.data.steps.filter((_: any, i: number) => i !== idx);
+                              updateBlockLocal(activeBlock.id, 'data.steps', newSteps);
+                            }}
+                            className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <TextInput
+                            className="w-12 bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none text-center"
+                            value={step.number}
+                            onChange={(val) => {
+                              const newSteps = [...overrides.data.steps];
+                              newSteps[idx] = { ...step, number: val };
+                              updateBlockLocal(activeBlock.id, 'data.steps', newSteps);
+                            }}
+                          />
+                          <TextInput
+                            className="flex-1 bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none uppercase"
+                            value={step.title}
+                            onChange={(val) => {
+                              const newSteps = [...overrides.data.steps];
+                              newSteps[idx] = { ...step, title: val };
+                              updateBlockLocal(activeBlock.id, 'data.steps', newSteps);
+                            }}
+                          />
+                        </div>
+
+                        <textarea
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none h-16 resize-none"
+                          value={step.description}
+                          onChange={(e) => {
+                            const newSteps = [...overrides.data.steps];
+                            newSteps[idx] = { ...step, description: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.steps', newSteps);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isTechStack && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Tech Stack Content</label>
+                  <TextInput
+                    placeholder="Section Title"
+                    value={overrides.data?.title}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-24"
+                    placeholder="Section Description"
+                    value={overrides.data?.description || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.description', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Categories</label>
+                    <button
+                      onClick={() => {
+                        const newCats = [...(overrides.data?.categories || []), { id: crypto.randomUUID(), name: 'New Stack', color: '#3B82F6', technologies: ['React', 'Node'] }];
+                        updateBlockLocal(activeBlock.id, 'data.categories', newCats);
+                      }}
+                      className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(overrides.data?.categories || []).map((cat: any, idx: number) => (
+                      <div key={cat.id} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2 relative group">
+                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                          <div className="w-4 h-4 rounded-full border border-black/10 overflow-hidden relative">
+                            <input
+                              type="color"
+                              value={cat.color}
+                              className="absolute inset-0 w-[150%] h-[150%] -translate-x-[25%] -translate-y-[25%] p-0 border-0 cursor-pointer opacity-0"
+                              onChange={(e) => {
+                                const newCats = [...overrides.data.categories];
+                                newCats[idx] = { ...cat, color: e.target.value };
+                                updateBlockLocal(activeBlock.id, 'data.categories', newCats);
+                              }}
+                            />
+                            <div className="w-full h-full pointer-events-none" style={{ backgroundColor: cat.color }} />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newCats = overrides.data.categories.filter((_: any, i: number) => i !== idx);
+                              updateBlockLocal(activeBlock.id, 'data.categories', newCats);
+                            }}
+                            className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+
+                        <TextInput
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none uppercase mb-2"
+                          value={cat.name}
+                          onChange={(val) => {
+                            const newCats = [...overrides.data.categories];
+                            newCats[idx] = { ...cat, name: val };
+                            updateBlockLocal(activeBlock.id, 'data.categories', newCats);
+                          }}
+                        />
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Technologies (comma separated)</label>
+                          <textarea
+                            className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none h-16 resize-none font-mono"
+                            value={cat.technologies?.join(', ')}
+                            onChange={(e) => {
+                              const newCats = [...overrides.data.categories];
+                              newCats[idx] = { ...cat, technologies: e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean) };
+                              updateBlockLocal(activeBlock.id, 'data.categories', newCats);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isFeaturedProject && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Featured Project</label>
+                  <TextInput
+                    placeholder="Section Title"
+                    value={overrides.data?.title}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                  />
+                  <TextInput
+                    placeholder="Project Name"
+                    value={overrides.data?.projectName}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.projectName', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-bold"
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-32"
+                    placeholder="Project Description"
+                    value={overrides.data?.description || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.description', e.target.value)}
+                  />
+                  <TextInput
+                    placeholder="Image URL"
+                    value={overrides.data?.image}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.image', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30"
+                  />
+                  <TextInput
+                    placeholder="Live URL"
+                    value={overrides.data?.liveUrl}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.liveUrl', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30"
+                  />
+                  <TextInput
+                    placeholder="GitHub URL"
+                    value={overrides.data?.githubUrl}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.githubUrl', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30"
+                  />
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold opacity-30 uppercase tracking-widest">Tags (comma separated)</label>
+                    <textarea
+                      className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-xs outline-none h-16 resize-none font-mono"
+                      value={overrides.data?.tags?.join(', ')}
+                      onChange={(e) => {
+                        const tags = e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean);
+                        updateBlockLocal(activeBlock.id, 'data.tags', tags);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isProjectsGrid && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Projects Grid</label>
+                  <TextInput
+                    placeholder="Section Title"
+                    value={overrides.data?.title}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-24"
+                    placeholder="Section Description"
+                    value={overrides.data?.description || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.description', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Projects</label>
+                    <button
+                      onClick={() => {
+                        const newProjects = [...(overrides.data?.projects || []), {
+                          id: crypto.randomUUID(),
+                          name: 'New Project',
+                          description: 'Project description',
+                          image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop',
+                          tags: ['React'],
+                          liveUrl: '',
+                          githubUrl: ''
+                        }];
+                        updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                      }}
+                      className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(overrides.data?.projects || []).map((project: any, idx: number) => (
+                      <div key={project.id} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold opacity-50">Project {idx + 1}</span>
+                          <button
+                            onClick={() => {
+                              const newProjects = overrides.data.projects.filter((_: any, i: number) => i !== idx);
+                              updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                            }}
+                            className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                        <TextInput
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none"
+                          placeholder="Project Name"
+                          value={project.name}
+                          onChange={(val) => {
+                            const newProjects = [...overrides.data.projects];
+                            newProjects[idx] = { ...project, name: val };
+                            updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                          }}
+                        />
+                        <textarea
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none h-16 resize-none"
+                          placeholder="Description"
+                          value={project.description}
+                          onChange={(e) => {
+                            const newProjects = [...overrides.data.projects];
+                            newProjects[idx] = { ...project, description: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                          }}
+                        />
+                        <TextInput
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none"
+                          placeholder="Image URL"
+                          value={project.image}
+                          onChange={(val) => {
+                            const newProjects = [...overrides.data.projects];
+                            newProjects[idx] = { ...project, image: val };
+                            updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                          }}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <TextInput
+                            className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none"
+                            placeholder="Live URL"
+                            value={project.liveUrl}
+                            onChange={(val) => {
+                              const newProjects = [...overrides.data.projects];
+                              newProjects[idx] = { ...project, liveUrl: val };
+                              updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                            }}
+                          />
+                          <TextInput
+                            className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none"
+                            placeholder="GitHub URL"
+                            value={project.githubUrl}
+                            onChange={(val) => {
+                              const newProjects = [...overrides.data.projects];
+                              newProjects[idx] = { ...project, githubUrl: val };
+                              updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                            }}
+                          />
+                        </div>
+                        <textarea
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none h-12 resize-none font-mono"
+                          placeholder="Tags (comma separated)"
+                          value={project.tags?.join(', ')}
+                          onChange={(e) => {
+                            const newProjects = [...overrides.data.projects];
+                            newProjects[idx] = { ...project, tags: e.target.value.split(',').map((t: string) => t.trim()).filter(Boolean) };
+                            updateBlockLocal(activeBlock.id, 'data.projects', newProjects);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isCodeShowcase && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Code Showcase</label>
+                  <TextInput
+                    placeholder="Section Title"
+                    value={overrides.data?.title}
+                    onChange={(val) => updateBlockLocal(activeBlock.id, 'data.title', val)}
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-black tracking-widest uppercase"
+                  />
+                  <textarea
+                    className="w-full bg-black/[0.03] border border-black/5 rounded-lg p-3 text-sm outline-none focus:border-blue-500/30 font-medium h-24"
+                    placeholder="Section Description"
+                    value={overrides.data?.description || ''}
+                    onChange={(e) => updateBlockLocal(activeBlock.id, 'data.description', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-black/5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs uppercase tracking-[0.2em] opacity-30 font-bold">Code Snippets</label>
+                    <button
+                      onClick={() => {
+                        const newSnippets = [...(overrides.data?.snippets || []), {
+                          id: crypto.randomUUID(),
+                          title: 'New Snippet',
+                          language: 'javascript',
+                          code: '// Your code here'
+                        }];
+                        updateBlockLocal(activeBlock.id, 'data.snippets', newSnippets);
+                      }}
+                      className="p-1 px-2 bg-blue-500 text-white text-xs rounded uppercase font-bold hover:bg-blue-600 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(overrides.data?.snippets || []).map((snippet: any, idx: number) => (
+                      <div key={snippet.id} className="p-3 bg-black/[0.03] rounded-lg border border-black/5 space-y-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold opacity-50">Snippet {idx + 1}</span>
+                          <button
+                            onClick={() => {
+                              const newSnippets = overrides.data.snippets.filter((_: any, i: number) => i !== idx);
+                              updateBlockLocal(activeBlock.id, 'data.snippets', newSnippets);
+                            }}
+                            className="p-1 text-red-500 opacity-20 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                        <TextInput
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs font-bold outline-none"
+                          placeholder="Snippet Title"
+                          value={snippet.title}
+                          onChange={(val) => {
+                            const newSnippets = [...overrides.data.snippets];
+                            newSnippets[idx] = { ...snippet, title: val };
+                            updateBlockLocal(activeBlock.id, 'data.snippets', newSnippets);
+                          }}
+                        />
+                        <TextInput
+                          className="w-full bg-white text-slate-900 border border-black/5 rounded p-2 text-xs outline-none"
+                          placeholder="Language (e.g., javascript, typescript)"
+                          value={snippet.language}
+                          onChange={(val) => {
+                            const newSnippets = [...overrides.data.snippets];
+                            newSnippets[idx] = { ...snippet, language: val };
+                            updateBlockLocal(activeBlock.id, 'data.snippets', newSnippets);
+                          }}
+                        />
+                        <textarea
+                          className="w-full bg-black text-green-400 border border-black/5 rounded p-3 text-xs outline-none h-48 resize-none font-mono"
+                          placeholder="Code"
+                          value={snippet.code}
+                          onChange={(e) => {
+                            const newSnippets = [...overrides.data.snippets];
+                            newSnippets[idx] = { ...snippet, code: e.target.value };
+                            updateBlockLocal(activeBlock.id, 'data.snippets', newSnippets);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 

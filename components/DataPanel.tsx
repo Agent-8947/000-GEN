@@ -3,28 +3,28 @@ import { useStore } from '../store';
 import { X, Globe, FileCode, Upload } from 'lucide-react';
 
 export const DataPanel: React.FC = () => {
-    const { uiTheme, toggleDataPanel, exportProjectData, importProjectData } = useStore();
-    const [exporting, setExporting] = useState(false);
+  const { uiTheme, toggleDataPanel, exportProjectData, importProjectData } = useStore();
+  const [exporting, setExporting] = useState(false);
 
-    const handleExportProductionSite = async () => {
-        setExporting(true);
+  const handleExportProductionSite = async () => {
+    setExporting(true);
 
-        try {
-            const dnaData = exportProjectData();
-            const state = JSON.parse(dnaData);
+    try {
+      const dnaData = exportProjectData();
+      const state = JSON.parse(dnaData);
 
-            const getParam = (group: string, id: string) =>
-                state.globalSettings?.[group]?.params?.find((p: any) => p.id === id)?.value;
+      const getParam = (group: string, id: string) =>
+        state.globalSettings?.[group]?.params?.find((p: any) => p.id === id)?.value;
 
-            const bgColor = getParam('GL02', 'P1') || '#09090B';
-            const textColor = getParam('GL02', 'P4') || '#FFFFFF';
-            const accentColor = getParam('GL02', 'P3') || '#3B82F6';
-            const fontFamily = getParam('GL01', 'P8') || 'Inter';
-            const containerWidth = getParam('GL03', 'P6') || '1200';
-            const radius = getParam('GL07', 'P1') || '8';
-            const isSticky = getParam('GL11', 'P1') === 'true';
+      const bgColor = getParam('GL02', 'P1') || '#09090B';
+      const textColor = getParam('GL02', 'P4') || '#FFFFFF';
+      const accentColor = getParam('GL02', 'P3') || '#3B82F6';
+      const fontFamily = getParam('GL01', 'P8') || 'Inter';
+      const containerWidth = getParam('GL03', 'P6') || '1200';
+      const radius = getParam('GL07', 'P1') || '8';
+      const isSticky = getParam('GL11', 'P1') === 'true';
 
-            const htmlContent = `<!DOCTYPE html>
+      const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1030,6 +1030,10 @@ export const DataPanel: React.FC = () => {
             );
         };
 
+        const MethodologyBlock = ({ block, padding }) => { const { data = {} } = block.localOverrides || {}; const steps = data.steps || []; return (<section className={padding + " border-b border-white/5"}><div className="container-dna">{data.title && <div className="text-center mb-16"><h2 className="text-4xl md:text-5xl font-black uppercase mb-4">{data.title}</h2></div>}<div className="max-w-3xl mx-auto space-y-12">{steps.map((step, i) => (<motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="relative pl-16 border-l-2 border-white/10 pb-12 last:pb-0"><div className="absolute -left-8 top-0 w-14 h-14 rounded-full bg-[var(--dna-accent)] flex items-center justify-center text-black font-black text-xl">{step.number}</div><h3 className="text-2xl font-bold uppercase mb-3">{step.title}</h3><p className="opacity-60 leading-relaxed">{step.description}</p></motion.div>))}</div></div></section>); };
+        const TechStackBlock = ({ block, padding }) => { const { data = {} } = block.localOverrides || {}; const categories = data.categories || []; return (<section className={padding + " border-b border-white/5"}><div className="container-dna">{data.title && <div className="text-center mb-16"><h2 className="text-4xl md:text-5xl font-black uppercase mb-4">{data.title}</h2></div>}<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{categories.map((cat, i) => (<motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} className="dna-card group"><div className="flex items-center gap-3 mb-4"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div><h3 className="font-bold uppercase text-sm tracking-wider" style={{ color: cat.color }}>{cat.name}</h3></div><div className="flex flex-wrap gap-2">{(cat.technologies || []).map((tech, j) => <span key={j} className="px-3 py-1 bg-white/5 rounded text-xs font-medium opacity-70 hover:opacity-100 transition-opacity">{tech}</span>)}</div></motion.div>))}</div></div></section>); };
+        const ProjectsBlock = ({ block, padding }) => { const { data = {}, layout = {} } = block.localOverrides || {}; const type = block.type; if (type === 'B1901') { return (<section className={padding + " border-b border-white/5"}><div className="container-dna"><div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"><div><h3 className="text-4xl md:text-6xl font-black uppercase mb-6" style={{ color: 'var(--dna-accent)' }}>{data.projectName || 'Project'}</h3><p className="text-lg opacity-70 mb-8">{data.description}</p><div className="flex gap-2 mb-8">{(data.tags || []).map((t, i) => <span key={i} className="px-3 py-1 border border-white/20 rounded text-xs font-bold uppercase">{t}</span>)}</div><div className="flex gap-4">{data.liveUrl && <a href={data.liveUrl} target="_blank" className="px-8 py-4 bg-white text-black font-bold uppercase tracking-widest text-sm hover:scale-105 transition-transform">Live Demo</a>}{data.githubUrl && <a href={data.githubUrl} target="_blank" className="px-8 py-4 border border-white/20 font-bold uppercase tracking-widest text-sm hover:bg-white/10 transition-colors">GitHub</a>}</div></div><div><img src={data.image} alt={data.projectName} className="w-full rounded-lg border border-white/10" /></div></div></div></section>); } if (type === 'B1902') { return (<section className={padding + " border-b border-white/5"}><div className="container-dna"><h2 className="text-4xl font-black uppercase mb-12">{data.title || 'Projects'}</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-8">{(data.projects || []).map((p, i) => <div key={i} className="bg-white/5 border border-white/5 rounded-xl overflow-hidden"><div className="aspect-video overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div><div className="p-8"><h3 className="text-2xl font-bold uppercase mb-3">{p.name}</h3><p className="opacity-60 text-sm">{p.description}</p></div></div>)}</div></div></section>); } if (type === 'B1903') { return (<section className={padding + " border-b border-white/5"}><div className="container-dna"><h2 className="text-4xl font-black uppercase mb-12">{data.title || 'Code'}</h2><div className="space-y-6">{(data.snippets || []).map((s, i) => <div key={i} className="border border-white/10 rounded-xl overflow-hidden bg-[#0D1117]"><div className="px-4 py-3 border-b border-white/5"><span className="text-xs font-mono opacity-50">{s.title}</span></div><div className="p-6"><pre><code className="font-mono text-sm text-gray-300">{s.code}</code></pre></div></div>)}</div></div></section>); } return null; };
+
         // ========================================
         // B22 - TESTIMONIALS/REVIEWS BLOCK (Enhanced)
         // ========================================
@@ -1249,6 +1253,18 @@ export const DataPanel: React.FC = () => {
             if (type.startsWith('B22')) {
                 return <ReviewsBlock block={block} padding={padding} />;
             }
+            if (type.startsWith('B17')) {
+                return <MethodologyBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B18')) {
+                return <TechStackBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B19')) {
+                return <ProjectsBlock block={block} padding={padding} />;
+            }
+            if (type.startsWith('B24')) {
+                return <SocialDockBlock block={block} padding={padding} />;
+            }
             
             // Fallback to universal block
             return <UniversalBlock block={block} padding={padding} />;
@@ -1293,126 +1309,126 @@ export const DataPanel: React.FC = () => {
 </body>
 </html>`;
 
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'index.html';
-            a.click();
-            URL.revokeObjectURL(url);
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      a.click();
+      URL.revokeObjectURL(url);
 
-            setTimeout(() => alert('✅ Site exported successfully!'), 500);
+      setTimeout(() => alert('✅ Site exported successfully!'), 500);
 
-        } catch (error) {
-            console.error('Export failed:', error);
-            alert('❌ Export failed. Check console.');
-        } finally {
-            setExporting(false);
-        }
-    };
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('❌ Export failed. Check console.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
-    const handleExportJSON = () => {
-        try {
-            const dnaData = exportProjectData();
-            const blob = new Blob([dnaData], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'dna-project.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            alert('Failed to export JSON');
-        }
-    };
+  const handleExportJSON = () => {
+    try {
+      const dnaData = exportProjectData();
+      const blob = new Blob([dnaData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dna-project.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export JSON');
+    }
+  };
 
-    const handleImportJSON = () => {
-        try {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = (e: Event) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (!file) return;
+  const handleImportJSON = () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e: Event) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
 
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const json = event.target?.result as string;
-                        importProjectData(json);
-                        alert('✅ Project imported successfully!');
-                    } catch (error) {
-                        alert('❌ Failed to import JSON. Invalid file format.');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        } catch (error) {
-            alert('Failed to import JSON');
-        }
-    };
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const json = event.target?.result as string;
+            importProjectData(json);
+            alert('✅ Project imported successfully!');
+          } catch (error) {
+            alert('❌ Failed to import JSON. Invalid file format.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    } catch (error) {
+      alert('Failed to import JSON');
+    }
+  };
 
-    return (
-        <div className="w-[360px] h-full border-l flex flex-col" style={{ backgroundColor: uiTheme.lightPanel }}>
-            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements }}>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Production Hub</span>
-                <button onClick={toggleDataPanel} className="opacity-20 hover:opacity-100 transition-opacity">
-                    <X size={18} />
-                </button>
+  return (
+    <div className="w-[360px] h-full border-l flex flex-col" style={{ backgroundColor: uiTheme.lightPanel }}>
+      <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: uiTheme.elements }}>
+        <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Production Hub</span>
+        <button onClick={toggleDataPanel} className="opacity-20 hover:opacity-100 transition-opacity">
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="p-8 flex-1 space-y-4">
+        <button
+          onClick={handleExportProductionSite}
+          disabled={exporting}
+          className="w-full p-12 bg-blue-500/10 border-2 border-blue-500/20 rounded-[40px] flex flex-col items-center gap-6 hover:bg-blue-500/20 transition-all group disabled:opacity-50"
+        >
+          <Globe size={48} className="text-blue-500 group-hover:scale-110 transition-transform" />
+          <div className="text-center">
+            <div className="text-[14px] font-black uppercase text-blue-500 tracking-[0.2em]">
+              {exporting ? 'Exporting...' : 'Export HTML Site'}
             </div>
+            <div className="text-[8px] opacity-40 uppercase mt-2">Universal v25.0</div>
+          </div>
+        </button>
 
-            <div className="p-8 flex-1 space-y-4">
-                <button
-                    onClick={handleExportProductionSite}
-                    disabled={exporting}
-                    className="w-full p-12 bg-blue-500/10 border-2 border-blue-500/20 rounded-[40px] flex flex-col items-center gap-6 hover:bg-blue-500/20 transition-all group disabled:opacity-50"
-                >
-                    <Globe size={48} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                    <div className="text-center">
-                        <div className="text-[14px] font-black uppercase text-blue-500 tracking-[0.2em]">
-                            {exporting ? 'Exporting...' : 'Export HTML Site'}
-                        </div>
-                        <div className="text-[8px] opacity-40 uppercase mt-2">Universal v25.0</div>
-                    </div>
-                </button>
+        <button
+          onClick={handleExportJSON}
+          className="w-full p-8 bg-green-500/10 border-2 border-green-500/20 rounded-[24px] flex items-center gap-4 hover:bg-green-500/20 transition-all"
+        >
+          <FileCode size={32} className="text-green-500" />
+          <div className="text-left flex-1">
+            <div className="text-[12px] font-bold text-green-500 uppercase">Export JSON</div>
+            <div className="text-[8px] opacity-40 mt-1">Project data</div>
+          </div>
+        </button>
 
-                <button
-                    onClick={handleExportJSON}
-                    className="w-full p-8 bg-green-500/10 border-2 border-green-500/20 rounded-[24px] flex items-center gap-4 hover:bg-green-500/20 transition-all"
-                >
-                    <FileCode size={32} className="text-green-500" />
-                    <div className="text-left flex-1">
-                        <div className="text-[12px] font-bold text-green-500 uppercase">Export JSON</div>
-                        <div className="text-[8px] opacity-40 mt-1">Project data</div>
-                    </div>
-                </button>
+        <button
+          onClick={handleImportJSON}
+          className="w-full p-8 bg-purple-500/10 border-2 border-purple-500/20 rounded-[24px] flex items-center gap-4 hover:bg-purple-500/20 transition-all"
+        >
+          <Upload size={32} className="text-purple-500" />
+          <div className="text-left flex-1">
+            <div className="text-[12px] font-bold text-purple-500 uppercase">Import JSON</div>
+            <div className="text-[8px] opacity-40 mt-1">Load project</div>
+          </div>
+        </button>
 
-                <button
-                    onClick={handleImportJSON}
-                    className="w-full p-8 bg-purple-500/10 border-2 border-purple-500/20 rounded-[24px] flex items-center gap-4 hover:bg-purple-500/20 transition-all"
-                >
-                    <Upload size={32} className="text-purple-500" />
-                    <div className="text-left flex-1">
-                        <div className="text-[12px] font-bold text-purple-500 uppercase">Import JSON</div>
-                        <div className="text-[8px] opacity-40 mt-1">Load project</div>
-                    </div>
-                </button>
-
-                <div className="mt-8 p-4 bg-white/5 rounded-lg">
-                    <div className="text-[10px] font-bold uppercase mb-2 text-green-400">✅ Supported Blocks:</div>
-                    <ul className="text-[9px] opacity-60 space-y-1 leading-relaxed">
-                        <li>• B01 - Navbar</li>
-                        <li>• B02 - Hero</li>
-                        <li>• B03 - Features/Services</li>
-                        <li>• B04 - Gallery</li>
-                        <li>• B05 - Testimonials</li>
-                        <li>• B06 - CTA</li>
-                        <li>• B07 - Footer</li>
-                        <li>• Universal fallback</li>
-                    </ul>
-                </div>
-            </div>
+        <div className="mt-8 p-4 bg-white/5 rounded-lg">
+          <div className="text-[10px] font-bold uppercase mb-2 text-green-400">✅ Supported Blocks:</div>
+          <ul className="text-[9px] opacity-60 space-y-1 leading-relaxed">
+            <li>• B01 - Navbar</li>
+            <li>• B02 - Hero</li>
+            <li>• B03 - Features/Services</li>
+            <li>• B04 - Gallery</li>
+            <li>• B05 - Testimonials</li>
+            <li>• B06 - CTA</li>
+            <li>• B07 - Footer</li>
+            <li>• Universal fallback</li>
+          </ul>
         </div>
-    );
+      </div>
+    </div>
+  );
 };

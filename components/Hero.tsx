@@ -122,7 +122,7 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
                     overrides.media?.imagePosition === 'bottom' ? 'column' : 'row'),
         alignItems: 'center',
         justifyContent: 'center',
-        textAlign: isMobileMode ? 'center' : (layout.alignment as any || 'center'),
+        textAlign: (layout.alignment as any || 'center'),
         position: 'relative',
         overflow: 'hidden',
         transition: 'all 0.5s ease-out'
@@ -165,8 +165,15 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
 
     const hasImage = overrides.media?.showImage && overrides.media?.imageUrl;
     const mediaPos = overrides.media?.imagePosition || 'right';
-    const isSplit = hasImage && ['left', 'right', 'top', 'bottom'].includes(mediaPos);
-    const isFullBg = hasImage && mediaPos === 'background';
+
+    // Mobile: always use background mode with 80% opacity
+    // Desktop: respect configured position
+    const effectivePos = isMobileMode && hasImage ? 'background' : mediaPos;
+    const isSplit = hasImage && ['left', 'right', 'top', 'bottom'].includes(effectivePos);
+    const isFullBg = hasImage && effectivePos === 'background';
+
+    // Mobile uses 92% opacity, desktop uses configured opacity
+    const imageOpacity = isMobileMode ? 0.92 : (overrides.media?.imageOpacity || 100) / 100;
 
     const shapeStyles: Record<string, string> = {
         square: 'aspect-square rounded-none',
@@ -193,14 +200,14 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
             {isFullBg && (
                 <div
                     className="absolute inset-0 z-0 transition-opacity duration-700 pointer-events-none"
-                    style={{ opacity: (overrides.media.imageOpacity || 100) / 100 }}
+                    style={{ opacity: imageOpacity }}
                 >
                     <img
                         src={overrides.media.imageUrl}
                         className="w-full h-full object-cover"
                         alt="Hero background"
                     />
-                    <div className="absolute inset-0 bg-black/10" />
+                    <div className="absolute inset-0 bg-black/40" />
                 </div>
             )}
 
@@ -217,24 +224,32 @@ export const Hero: React.FC<HeroProps> = ({ id, type, localOverrides: overrides 
                 } items-center gap-12 md:gap-20`}>
 
                 {/* Text Content */}
-                <div className={`${isSplit ? 'w-full md:w-1/2' : 'max-w-4xl'} space-y-8 ${isMobileMode ? 'text-center mx-auto' : (layout.alignment === 'center' ? 'text-center mx-auto' : layout.alignment === 'right' ? 'text-right ml-auto' : 'text-left mr-auto')}`}>
-                    <h1 style={{ ...titleStyle, ...getEntranceStyle(0) }} className="tracking-tight leading-tight">
+                <div className={`${isSplit ? 'w-full md:w-1/2' : 'max-w-4xl'} space-y-8 ${layout.alignment === 'center' ? 'text-center mx-auto' : layout.alignment === 'right' ? 'text-right ml-auto' : 'text-left mr-auto'}`}>
+                    <h1 style={{
+                        ...titleStyle,
+                        ...getEntranceStyle(0),
+                        textShadow: isFullBg ? '0 1px 8px rgba(0,0,0,0.4)' : 'none'
+                    }} className="tracking-tight leading-tight">
                         {safeData.title}
                     </h1>
 
-                    <p style={{ ...descStyle, ...getEntranceStyle(1) }} className={`opacity-60 ${isMobileMode || layout.alignment === 'center' ? 'mx-auto' : ''}`}>
+                    <p style={{
+                        ...descStyle,
+                        ...getEntranceStyle(1),
+                        textShadow: isFullBg ? '0 1px 6px rgba(0,0,0,0.3)' : 'none'
+                    }} className={`opacity-60 ${layout.alignment === 'center' ? 'mx-auto' : ''}`}>
                         {safeData.description}
                     </p>
 
-                    <div style={getEntranceStyle(2)} className={`flex items-center gap-4 pt-6 ${isMobileMode ? 'justify-center' : (layout.alignment === 'center' ? 'justify-center' : layout.alignment === 'right' ? 'justify-end' : 'justify-start')}`}>
+                    <div style={getEntranceStyle(2)} className={`flex items-center gap-4 pt-6 ${layout.alignment === 'center' ? 'justify-center' : layout.alignment === 'right' ? 'justify-end' : 'justify-start'}`}>
                         {safeData.primaryBtnVisible !== false && renderButton(safeData.primaryBtnText, true)}
                         {safeData.secondaryBtnVisible !== false && renderButton(safeData.secondaryBtnText, false)}
                     </div>
                 </div>
 
-                {/* Split Image Media */}
+                {/* Split Image Media (Hidden on mobile) */}
                 {isSplit && (
-                    <div style={getEntranceStyle(3)} className={`${(mediaPos === 'top' || mediaPos === 'bottom') ? 'w-full max-w-4xl' : 'w-full md:w-1/2'} relative`}>
+                    <div style={getEntranceStyle(3)} className={`${isMobileMode ? 'hidden' : ''} ${(effectivePos === 'top' || effectivePos === 'bottom') ? 'w-full max-w-4xl' : 'w-full md:w-1/2'} relative`}>
                         <div
                             className={`relative overflow-hidden ${shapeClass} ${isMobileMode ? 'max-h-[250px]' : ''}`}
                             style={{

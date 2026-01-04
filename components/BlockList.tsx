@@ -6,7 +6,7 @@ import {
   Plus, Layout, ArrowUp, ArrowDown, X, Trash2, Layers, Grid, Type,
   MessageSquare, Mail, Image, BarChart3, Clock, SeparatorHorizontal,
   Tag, Monitor, Share2, Activity, ChevronDown, ChevronRight, Zap, Radio as RadioIcon,
-  Box
+  Box, Star, Code
 } from 'lucide-react';
 
 export const BlockList: React.FC = () => {
@@ -36,6 +36,9 @@ export const BlockList: React.FC = () => {
     "08": "Social",
     "09": "Structure",
     "10": "System UI",
+    "17": "Process",
+    "18": "Technology",
+    "19": "Projects",
     "99": "Utility"
   };
 
@@ -62,6 +65,11 @@ export const BlockList: React.FC = () => {
     { id: 'B1301', type: 'B1301', label: 'Contact', sub: 'Form Input', icon: <Mail size={14} /> },
     { id: 'B1401', type: 'B1401', label: 'Footer', sub: 'Base Rail', icon: <Layout size={14} /> },
     { id: 'B1501', type: 'B1501', label: 'Badges', sub: 'DNA Tags', icon: <Tag size={14} /> },
+    { id: 'B1701', type: 'B1701', label: 'Methodology', sub: 'Process Steps', icon: <Activity size={14} />, badge: 'TREND' },
+    { id: 'B1801', type: 'B1801', label: 'Tech Stack', sub: 'Interactive Grid', icon: <Layers size={14} />, badge: 'INTERACTIVE' },
+    { id: 'B1901', type: 'B1901', label: 'Featured Project', sub: 'Hero Showcase', icon: <Star size={14} />, badge: 'PREMIUM' },
+    { id: 'B1902', type: 'B1902', label: 'Projects Grid', sub: 'Portfolio Matrix', icon: <Grid size={14} />, badge: 'TREND' },
+    { id: 'B1903', type: 'B1903', label: 'Code Showcase', sub: 'Syntax Display', icon: <Code size={14} />, badge: 'DEV' },
     { id: 'B2101', type: 'B2101', label: 'Logos', sub: 'Neural Partners', icon: <Zap size={14} /> },
     { id: 'B2201', type: 'B2201', label: 'Feedback', sub: 'Classic Review', icon: <MessageSquare size={14} /> },
     { id: 'B2202', type: 'B2202', label: 'Marquee', sub: 'Infinite Stream', icon: <MessageSquare size={14} />, badge: 'TREND' },

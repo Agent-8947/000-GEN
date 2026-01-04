@@ -4,11 +4,12 @@ import { useStore } from '../store';
 import { motion } from 'framer-motion';
 
 export const Preview: React.FC<{ id: string, localOverrides: any }> = ({ id, localOverrides }) => {
-    const { globalSettings } = useStore();
+    const { globalSettings, viewportMode } = useStore();
     const gl02 = globalSettings['GL02'].params;
     const gl07 = globalSettings['GL07'].params;
     const gl09 = globalSettings['GL09'].params;
 
+    const isMobileMode = viewportMode === 'mobile';
     const textPrim = gl02[3].value;
     const border = gl02[5].value;
 
@@ -32,8 +33,9 @@ export const Preview: React.FC<{ id: string, localOverrides: any }> = ({ id, loc
                 paddingBottom: `${layout.paddingY}px`
             }}
         >
+            {/* Container stays same size */}
             <div
-                className={`w-full max-w-5xl border overflow-hidden relative group transition-all duration-700 hover:shadow-2xl`}
+                className="w-full max-w-5xl border overflow-hidden relative group transition-all duration-700 hover:shadow-2xl flex items-center justify-center"
                 style={{
                     aspectRatio: layout.aspect === '16/9' ? '16/9' : '4/3',
                     borderColor: border,
@@ -42,7 +44,9 @@ export const Preview: React.FC<{ id: string, localOverrides: any }> = ({ id, loc
                 }}
             >
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-[10px] uppercase tracking-[1em] opacity-5 font-black">Architecture_Preview_Node</div>
+                    <div className="text-[10px] uppercase tracking-[1em] opacity-5 font-black">
+                        {isMobileMode ? 'Mobile_Viewport' : 'Desktop_Viewport'}
+                    </div>
                 </div>
                 {data.url && (
                     <iframe src={data.url} className="w-full h-full border-none z-10 relative" title={data.title} />
